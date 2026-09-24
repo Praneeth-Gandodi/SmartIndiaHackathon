@@ -507,62 +507,6 @@ function SectionHeading({
    RADAR
 ========================================================= */
 
-function Radar() {
-  const points = [
-    ["63%", "29%", "#FF3040"],
-    ["38%", "62%", "#FF5A1F"],
-    ["71%", "66%", "#FFC857"],
-    ["24%", "40%", "#36D399"],
-    ["52%", "44%", "#FF3040"]
-  ];
-
-  return (
-    <div className="radar-wrap">
-      <div className="radar">
-        <div className="radar-grid" />
-
-        <div className="radar-ring ring-1" />
-        <div className="radar-ring ring-2" />
-        <div className="radar-ring ring-3" />
-
-        <div className="radar-cross horizontal" />
-        <div className="radar-cross vertical" />
-
-        <div className="radar-scan" />
-
-        {points.map(
-          ([left, top, color], index) => (
-            <span
-              key={index}
-              className="radar-point"
-              style={{
-                left,
-                top,
-                background: color,
-                boxShadow: `0 0 18px ${color}`
-              }}
-            />
-          )
-        )}
-
-        <div className="radar-center" />
-      </div>
-
-      <div className="radar-coord coord-top">
-        17.6868° N
-      </div>
-
-      <div className="radar-coord coord-bottom">
-        83.2185° E
-      </div>
-
-      <div className="radar-label">
-        LIVE ORBITAL SCAN
-      </div>
-    </div>
-  );
-}
-
 /* =========================================================
    DETECTION ROW
 ========================================================= */
@@ -660,8 +604,7 @@ function Dashboard({
   const {
     DETECTIONS,
     TOTAL_DETECTIONS,
-    COUNT_BY_TYPE,
-    FIRMS_METADATA
+    COUNT_BY_TYPE
   } = useLiveData();
   const [expandedId, setExpandedId] =
     useState(null);
@@ -747,57 +690,9 @@ function Dashboard({
 
       <StatStrip />
 
-      <section className="intelligence-section">
-        <div className="intelligence-copy reveal">
-          <div className="eyebrow">
-            01 / FIRMS SNAPSHOT INTELLIGENCE
-          </div>
-
-          <h2>
-            Thermal signals
-            <br />
-            <span>without the noise.</span>
-          </h2>
-
-          <div className="large-count">
-            {TOTAL_DETECTIONS}
-          </div>
-
-          <div className="count-label">
-            REPRESENTATIVE FIRMS EVENTS
-          </div>
-
-          <p>
-            The selection demo starts from authentic NASA FIRMS
-            coordinates, acquisition times, brightness, FRP and
-            sensor fields. Records are restricted to India and
-            pre-classified with transparent demo context labels.
-          </p>
-
-          <div className="signal-list">
-            <div>
-              <span>DATA WINDOW</span>
-              <b>{FIRMS_METADATA.windowStart} → {FIRMS_METADATA.windowEnd}</b>
-            </div>
-
-            <div>
-              <span>INDIA RECORDS</span>
-              <b>{FIRMS_METADATA.qualityFilteredIndiaCount} FILTERED</b>
-            </div>
-
-            <div>
-              <span>PS CLASSIFICATION</span>
-              <b>PRE-CLASSIFIED DEMO</b>
-            </div>
-          </div>
-        </div>
-
-        <Radar />
-      </section>
-
       <section className="detections-section">
         <SectionHeading
-          eyebrow="02 / DETECTION STREAM"
+          eyebrow="01 / DETECTION STREAM"
           title="Recent Fire Detections"
           description="The latest classified thermal events entering the AGNI DRISHTI intelligence network."
         />
@@ -4108,250 +4003,6 @@ select:focus-visible {
 }
 
 /* =========================================================
-   INTELLIGENCE
-========================================================= */
-
-.intelligence-section {
-  min-height: 760px;
-  margin-top: 90px;
-  padding: 90px max(7vw,50px);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 7vw;
-  align-items: center;
-  border-top: 1px solid var(--line);
-}
-
-.intelligence-copy {
-  text-align: left;
-}
-
-.intelligence-copy h2 {
-  margin: 18px 0 20px;
-  font-size: clamp(42px,5vw,76px);
-  line-height: .98;
-  letter-spacing: -.055em;
-  text-align: left;
-}
-
-.intelligence-copy h2 span {
-  color: #737D89;
-  font-weight: 400;
-}
-
-.large-count {
-  margin-top: 50px;
-  font-size: clamp(70px,8vw,118px);
-  line-height: .8;
-  font-weight: 700;
-  letter-spacing: -.08em;
-}
-
-.count-label {
-  margin-top: 16px;
-  color: var(--orange);
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: .15em;
-}
-
-.intelligence-copy p {
-  max-width: 540px;
-  margin: 25px 0 0;
-  color: var(--muted);
-  font-size: 16px;
-  line-height: 1.8;
-}
-
-.signal-list {
-  max-width: 550px;
-  margin-top: 35px;
-  border-top: 1px solid var(--line);
-}
-
-.signal-list div {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 13px 0;
-  border-bottom: 1px solid var(--line);
-  font-family: var(--mono);
-  font-size: 9px;
-}
-
-.signal-list span {
-  color: #697480;
-}
-
-.signal-list b {
-  color: var(--green);
-  font-weight: 400;
-}
-
-/* =========================================================
-   RADAR
-========================================================= */
-
-.radar-wrap {
-  position: relative;
-  width: min(560px,100%);
-  aspect-ratio: 1;
-  margin: auto;
-}
-
-.radar {
-  position: absolute;
-  inset: 7%;
-  border: 1px solid rgba(255,255,255,.13);
-  border-radius: 50%;
-  overflow: hidden;
-  background: radial-gradient(
-    circle,
-    rgba(255,90,31,.035),
-    transparent 60%
-  );
-  box-shadow:
-    0 0 80px rgba(255,90,31,.035),
-    inset 0 0 80px rgba(255,90,31,.035);
-}
-
-.radar-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);
-  background-size: 45px 45px;
-}
-
-.radar-ring {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%,-50%);
-  border: 1px solid rgba(255,255,255,.11);
-  border-radius: 50%;
-}
-
-.ring-1 {
-  width: 25%;
-  height: 25%;
-}
-
-.ring-2 {
-  width: 55%;
-  height: 55%;
-}
-
-.ring-3 {
-  width: 82%;
-  height: 82%;
-}
-
-.radar-cross {
-  position: absolute;
-  background: rgba(255,255,255,.08);
-}
-
-.radar-cross.horizontal {
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 1px;
-}
-
-.radar-cross.vertical {
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 1px;
-}
-
-.radar-scan {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 50%;
-  height: 1px;
-  transform-origin: left center;
-  background: linear-gradient(
-    90deg,
-    rgba(255,90,31,.9),
-    transparent
-  );
-  box-shadow: 0 0 18px rgba(255,90,31,.4);
-  animation: radarScan 4s linear infinite;
-}
-
-@keyframes radarScan {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.radar-point {
-  position: absolute;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  transform: translate(-50%,-50%);
-  animation: radarPulse 1.8s infinite;
-}
-
-@keyframes radarPulse {
-  0%,100% {
-    transform: translate(-50%,-50%) scale(1);
-    opacity: 1;
-  }
-
-  50% {
-    transform: translate(-50%,-50%) scale(2);
-    opacity: .55;
-  }
-}
-
-.radar-center {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%,-50%);
-  background: var(--orange);
-  border-radius: 50%;
-  box-shadow: 0 0 20px var(--orange);
-}
-
-.radar-coord {
-  position: absolute;
-  color: #65717D;
-  font-family: var(--mono);
-  font-size: 9px;
-}
-
-.coord-top {
-  top: 2%;
-  left: 7%;
-}
-
-.coord-bottom {
-  right: 7%;
-  bottom: 2%;
-}
-
-.radar-label {
-  position: absolute;
-  bottom: 5%;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #697580;
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: .12em;
-  white-space: nowrap;
-}
-
-/* =========================================================
    DETECTION LIST
 ========================================================= */
 
@@ -4475,10 +4126,12 @@ select:focus-visible {
 }
 
 .row-toggle {
+  padding-left: 0;
   color: var(--orange);
   font-size: 20px;
   text-align: center;
   line-height: 1;
+  transform: translateX(-16px);
 }
 
 .row-index {
@@ -6696,14 +6349,6 @@ select:focus-visible {
     border-top: 1px solid var(--line);
   }
 
-  .intelligence-section {
-    grid-template-columns: 1fr;
-  }
-
-  .radar-wrap {
-    width: min(500px,80vw);
-  }
-
   .category-intro {
     grid-template-columns: .7fr 1.3fr;
   }
@@ -6824,15 +6469,6 @@ select:focus-visible {
 
   .stat-number {
     font-size: 38px;
-  }
-
-  .intelligence-section {
-    margin-top: 50px;
-    padding: 70px 24px;
-  }
-
-  .intelligence-copy h2 {
-    font-size: 46px;
   }
 
   .detections-section,
@@ -7270,8 +6906,6 @@ html[data-theme="light"] .row-index,
 html[data-theme="light"] .row-main span,
 html[data-theme="light"] .row-time,
 html[data-theme="light"] .row-coordinate,
-html[data-theme="light"] .radar-coord,
-html[data-theme="light"] .radar-label,
 html[data-theme="light"] .chart-axis,
 html[data-theme="light"] .chart-months,
 html[data-theme="light"] .chart-range,
