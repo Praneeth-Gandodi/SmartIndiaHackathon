@@ -1,0 +1,16 @@
+{
+  "short_name": "AGNI DRISHTI",
+  "name": "AGNI DRISHTI · Industrial Fire Intelligence",
+  "icons": [
+    {
+      "src": "logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#05070A",
+  "background_color": "#05070A"
+}

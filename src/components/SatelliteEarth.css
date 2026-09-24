@@ -1,0 +1,106 @@
+.satellite-earth-container {
+  position: relative;
+  width: 560px;
+  height: 560px;
+  max-width: 100%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.satellite-earth-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  outline: none;
+  filter: drop-shadow(0 0 45px rgba(26, 69, 117, 0.25));
+}
+
+.satellite-earth-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 1;
+}
+
+.earth-fallback-orb {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #184275 0%, #081424 70%, #03070d 100%);
+  box-shadow: 0 0 35px rgba(34, 110, 200, 0.25);
+  animation: earthPulse 2s ease-in-out infinite;
+}
+
+.earth-fallback-label {
+  font-family: var(--mono, monospace);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: #637080;
+}
+
+.earth-live-tag {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(5, 7, 10, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  font-family: var(--mono, monospace);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: #8c9ba8;
+  z-index: 3;
+  pointer-events: none;
+}
+
+@keyframes earthPulse {
+  0%, 100% {
+    transform: scale(0.97);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .satellite-earth-container {
+    width: 440px;
+    height: 440px;
+  }
+}
+
+@media (max-width: 992px) {
+  .satellite-earth-container {
+    width: 100%;
+    max-width: 420px;
+    height: 380px;
+    margin: 20px auto 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .satellite-earth-container {
+    height: 320px;
+  }
+  .earth-live-tag {
+    bottom: 12px;
+    right: 12px;
+    font-size: 8px;
+    padding: 4px 8px;
+  }
+}
