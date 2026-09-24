@@ -12,11 +12,11 @@
       try {
         savedTheme = localStorage.getItem("agni-drishti-theme");
       } catch {
-        // Continue with the operating-system preference.
+        // Continue with the dark default.
       }
       const theme = savedTheme === "dark" || savedTheme === "light"
         ? savedTheme
-        : (window.matchMedia?.("(prefers-color-scheme: light)").matches ? "light" : "dark");
+        : "dark";
       document.documentElement.dataset.theme = theme;
       document.documentElement.style.colorScheme = theme;
       document.querySelector('meta[name="theme-color"]').content =

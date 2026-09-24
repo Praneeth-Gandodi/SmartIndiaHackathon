@@ -82,7 +82,7 @@ function getInitialTheme() {
       THEME_STORAGE_KEY
     );
   } catch {
-    // Use the operating-system preference when storage is unavailable.
+    // Default to dark when storage is unavailable.
   }
 
   if (
@@ -92,11 +92,7 @@ function getInitialTheme() {
     return savedTheme;
   }
 
-  return window.matchMedia?.(
-    "(prefers-color-scheme: light)"
-  )?.matches
-    ? "light"
-    : "dark";
+  return "dark";
 }
 
 function applyTheme(theme) {
@@ -322,8 +318,7 @@ function Navbar({
           {[
             "Dashboard",
             "Maps",
-            "Analytics",
-            "Alerts"
+            "Analytics"
           ].map((item) => (
             <button
               key={item}
@@ -423,16 +418,6 @@ function ProfilePanel({ onClose, setPage }) {
           <strong>NASA FIRMS / OSM</strong>
         </div>
       </div>
-
-      <button
-        onClick={() => {
-          setPage("Alerts");
-          onClose();
-        }}
-      >
-        OPEN ALERT CENTER
-        <span>→</span>
-      </button>
 
       <button
         onClick={() => {
@@ -649,14 +634,6 @@ function DetectionRow({
 
       {expanded && (
         <div className="row-details">
-          <div className="row-details-copy">
-            <small>
-              INTELLIGENCE ASSESSMENT
-            </small>
-
-            <p>{detection.description}</p>
-          </div>
-
           <div className="row-gases">
             <GasPanel detection={detection} />
           </div>
@@ -1130,7 +1107,6 @@ function MapView({
   detections,
   selected,
   setSelected,
-  locateTrigger,
   satelliteMode,
   theme,
   mapRefExternal
@@ -1143,9 +1119,6 @@ function MapView({
 
   const markersRef =
     useRef([]);
-
-  const locationMarkerRef =
-    useRef(null);
 
   const spotMarkerRef =
     useRef(null);
@@ -1210,7 +1183,11 @@ function MapView({
           }
         );
 
-      standardLayerRef.current.addTo(map);
+      if (satelliteMode) {
+        satelliteLayerRef.current.addTo(map);
+      } else {
+        standardLayerRef.current.addTo(map);
+      }
 
       mapInstance.current = map;
 
@@ -1352,81 +1329,6 @@ function MapView({
     }
   }, [satelliteMode, theme]);
 
-  useEffect(() => {
-    if (!locateTrigger) {
-      return;
-    }
-
-    if (!navigator.geolocation) {
-      alert(
-        "Geolocation is not supported by this browser."
-      );
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        if (
-          !mapInstance.current ||
-          !window.L
-        ) {
-          return;
-        }
-
-        const {
-          latitude,
-          longitude
-        } = position.coords;
-
-        if (
-          locationMarkerRef.current
-        ) {
-          locationMarkerRef.current.remove();
-        }
-
-        const icon =
-          window.L.divIcon({
-            className:
-              "location-marker-wrapper",
-            html: `
-              <div class="location-marker">
-                <span></span>
-              </div>
-            `,
-            iconSize: [24, 24],
-            iconAnchor: [12, 12]
-          });
-
-        locationMarkerRef.current =
-          window.L.marker(
-            [latitude, longitude],
-            { icon }
-          )
-            .addTo(mapInstance.current)
-            .bindPopup(
-              "<strong>YOUR LOCATION</strong>"
-            );
-
-        mapInstance.current.flyTo(
-          [latitude, longitude],
-          11,
-          {
-            duration: 1.2
-          }
-        );
-      },
-      () => {
-        alert(
-          "Unable to determine your current location."
-        );
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000
-      }
-    );
-  }, [locateTrigger]);
-
   return (
     <div
       ref={mapElementRef}
@@ -1522,15 +1424,54 @@ function FilterRail({
   setFilters,
   resultCount,
   onReset,
-  onLocate,
   onSatellite,
   satelliteMode,
-  theme,
   mobileOpen,
   setMobileOpen
 }) {
-  const { TOTAL_DETECTIONS } =
-    useLiveData();
+  const { TOTAL_DETECTIONS } = useLiveData();
+  const filterTriggerRef = useRef(null);
+  const filterRailRef = useRef(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia?.("(max-width: 768px)");
+    if (!mediaQuery) return undefined;
+
+    const updateViewport = () => setIsMobileViewport(mediaQuery.matches);
+    updateViewport();
+    mediaQuery.addEventListener?.("change", updateViewport);
+    return () => mediaQuery.removeEventListener?.("change", updateViewport);
+  }, []);
+
+  const closeMobileFilters = useCallback(() => {
+    setMobileOpen(false);
+    window.setTimeout(() => filterTriggerRef.current?.focus(), 0);
+  }, [setMobileOpen]);
+
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeMobileFilters();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [closeMobileFilters, mobileOpen]);
+
+  useEffect(() => {
+    if (!mobileOpen || !isMobileViewport) return undefined;
+
+    const focusTimer = window.setTimeout(() => {
+      filterRailRef.current?.querySelector("input")?.focus();
+    }, 0);
+    return () => window.clearTimeout(focusTimer);
+  }, [isMobileViewport, mobileOpen]);
+
   const toggleArray = (
     field,
     value
@@ -1556,17 +1497,32 @@ function FilterRail({
   return (
     <>
       <button
+        ref={filterTriggerRef}
         className="mobile-filter-trigger"
-        onClick={() =>
-          setMobileOpen(!mobileOpen)
-        }
+        onClick={() => setMobileOpen(true)}
+        aria-expanded={mobileOpen}
+        aria-controls="maps-filter-drawer"
+        aria-label="Open map filters"
       >
         FILTERS
       </button>
 
+      {mobileOpen && isMobileViewport && (
+        <button
+          className="filter-backdrop"
+          onClick={closeMobileFilters}
+          aria-label="Close map filters"
+        />
+      )}
+
       <aside
+        ref={filterRailRef}
+        id="maps-filter-drawer"
         className={`filter-rail ${mobileOpen ? "mobile-open" : ""
           }`}
+        aria-label="Map filters"
+        aria-hidden={isMobileViewport && !mobileOpen ? "true" : undefined}
+        inert={isMobileViewport && !mobileOpen ? true : undefined}
       >
         <div className="rail-heading">
           <div className="eyebrow">
@@ -1671,32 +1627,21 @@ function FilterRail({
           </button>
 
           <button
-            className="rail-action"
-            onClick={onLocate}
-          >
-            ◎ LOCATE ME
-          </button>
-
-          <button
             className={`rail-action ${satelliteMode
               ? "rail-active"
               : ""
               }`}
             onClick={onSatellite}
+            aria-pressed={satelliteMode}
+            aria-label={satelliteMode ? "Switch to vector view" : "Switch to satellite view"}
           >
-            ◉{" "}
-            {satelliteMode
-              ? theme === "light"
-                ? "LIGHT BASEMAP"
-                : "DARK BASEMAP"
-              : "SATELLITE LAYER"}
+            ◉ {satelliteMode ? "SATELLITE" : "VECTOR"}
           </button>
 
           <button
             className="rail-action close-mobile-filter"
-            onClick={() =>
-              setMobileOpen(false)
-            }
+            onClick={closeMobileFilters}
+            aria-label="Close map filters"
           >
             CLOSE FILTERS
           </button>
@@ -1707,147 +1652,19 @@ function FilterRail({
 }
 
 /* =========================================================
-   THERMAL MAP VIEW & 10-DAY WILDFIRE TREND
-========================================================= */
-
-function seedFromString(str = "") {
-  let h = 7;
-  for (let i = 0; i < str.length; i++) {
-    h = (h * 31 + str.charCodeAt(i)) % 233280;
-  }
-  return h || 1;
-}
-
-function seededNoise(seed) {
-  let s = seed;
-  return function () {
-    s = (s * 9301 + 49297) % 233280;
-    return s / 233280;
-  };
-}
-
-function thermalColor(t) {
-  const stops = [
-    [0.0, [3, 8, 20]],
-    [0.18, [10, 26, 70]],
-    [0.34, [0, 78, 168]],
-    [0.48, [0, 138, 178]],
-    [0.6, [34, 214, 130]],
-    [0.7, [255, 208, 60]],
-    [0.82, [255, 132, 24]],
-    [0.92, [255, 52, 40]],
-    [1.0, [255, 235, 240]]
-  ];
-  t = Math.max(0, Math.min(1, t));
-  for (let i = 0; i < stops.length - 1; i++) {
-    if (t >= stops[i][0] && t <= stops[i + 1][0]) {
-      const [t0, c0] = stops[i];
-      const [t1, c1] = stops[i + 1];
-      const k = (t - t0) / (t1 - t0 || 1);
-      return c0.map((v, idx) =>
-        Math.round(v + (c1[idx] - v) * k)
-      );
-    }
-  }
-  return stops[stops.length - 1][1];
-}
+   SELECTED DETECTION SATELLITE CONTEXT
+   ========================================================= */
 
 function ThermalMap({ detection }) {
-  const canvasRef = useRef(null);
   const satMapRef = useRef(null);
   const satElRef = useRef(null);
 
   useEffect(() => {
-    const cvs = canvasRef.current;
-    if (!cvs) return;
-    const ctx = cvs.getContext("2d");
-    const W = cvs.width;
-    const H = cvs.height;
-    const seed = seedFromString(detection?.id || "hot");
-
-    ctx.clearRect(0, 0, W, H);
-
-    const cols = 26;
-    const rows = 15;
-    const tw = W / cols;
-    const th = tw * 0.5;
-    const cx = cols / 2;
-    const cy = rows / 2;
-    const burst =
-      0.5 +
-      Math.min((detection?.frp || 20) / 80, 0.5);
-    const rnd = seededNoise(seed + 11);
-    const hScale = 42;
-
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const dx = (c - cx) / (cols * 0.5);
-        const dy = (r - cy) / (rows * 0.5);
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        let t =
-          burst * Math.exp(-dist * dist * 2.2) +
-          (rnd() - 0.5) * 0.45;
-        t = Math.max(0.02, Math.min(1, t));
-        const [rr, gg, bb] = thermalColor(t);
-        const x0 = c * tw;
-        const y0 = r * th;
-        const height = t * hScale + 6;
-        const top = `rgba(${rr},${gg},${bb},0.62)`;
-        const right = `rgba(${Math.round(
-          rr * 0.55
-        )},${Math.round(gg * 0.55)},${Math.round(
-          bb * 0.55
-        )},0.62)`;
-        const left = `rgba(${Math.round(
-          rr * 0.4
-        )},${Math.round(gg * 0.4)},${Math.round(
-          bb * 0.4
-        )},0.62)`;
-
-        ctx.beginPath();
-        ctx.moveTo(x0 + tw / 2, y0);
-        ctx.lineTo(x0 + tw, y0 + th / 2);
-        ctx.lineTo(x0 + tw / 2, y0 + th);
-        ctx.lineTo(x0, y0 + th / 2);
-        ctx.closePath();
-        ctx.fillStyle = top;
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(x0 + tw, y0 + th / 2);
-        ctx.lineTo(x0 + tw / 2, y0 + th);
-        ctx.lineTo(x0 + tw / 2, y0 + th + height);
-        ctx.lineTo(x0 + tw, y0 + th / 2 + height);
-        ctx.closePath();
-        ctx.fillStyle = right;
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(x0, y0 + th / 2);
-        ctx.lineTo(x0 + tw / 2, y0 + th);
-        ctx.lineTo(x0 + tw / 2, y0 + th + height);
-        ctx.lineTo(x0, y0 + th / 2 + height);
-        ctx.closePath();
-        ctx.fillStyle = left;
-        ctx.fill();
-
-        ctx.strokeStyle = "rgba(4,7,13,0.35)";
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-    }
-  }, [detection]);
-
-  useEffect(() => {
     let mounted = true;
+
     injectLeaflet().then((L) => {
-      if (
-        !mounted ||
-        !satElRef.current ||
-        satMapRef.current
-      ) {
-        return;
-      }
+      if (!mounted || !satElRef.current || satMapRef.current) return;
+
       const map = L.map(satElRef.current, {
         zoomControl: false,
         attributionControl: false,
@@ -1857,10 +1674,8 @@ function ThermalMap({ detection }) {
         boxZoom: false,
         tap: false,
         keyboard: false
-      }).setView(
-        [detection.lat, detection.lng],
-        15
-      );
+      }).setView([detection.lat, detection.lng], 16);
+
       L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         {
@@ -1868,59 +1683,38 @@ function ThermalMap({ detection }) {
           attribution: "Tiles &copy; Esri"
         }
       ).addTo(map);
+
       satMapRef.current = map;
     });
+
     return () => {
       mounted = false;
-      if (satMapRef.current) {
-        satMapRef.current.remove();
-        satMapRef.current = null;
-      }
+      satMapRef.current?.remove();
+      satMapRef.current = null;
     };
   }, [detection]);
-
-  const brightness = detection?.brightness ?? 0;
 
   return (
     <div className="thermal-map-wrap">
       <div className="thermal-map-stage">
-        <div
-          ref={satElRef}
-          className="thermal-satellite"
-        />
-
-        <canvas
-          ref={canvasRef}
-          width={680}
-          height={440}
-          className="thermal-overlay-canvas"
-        />
+        <div ref={satElRef} className="thermal-satellite" />
       </div>
 
       <div className="thermal-map-head">
         <span className="live-pulse" />
-        SATELLITE CONTEXT · DEMO HEAT PATTERN
+        SELECTED SPOT · SATELLITE CONTEXT
       </div>
 
       <div className="thermal-map-coords">
-        {detection?.lat?.toFixed(4)}° N ·{" "}
-        {detection?.lng?.toFixed(4)}° E
-      </div>
-
-      <div className="thermal-map-footer">
-        <span>OBSERVED FIRMS BRIGHTNESS</span>
-        <span className="thermal-scale">
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
-        </span>
-        <span>{brightness || "—"} K</span>
+        {detection.lat?.toFixed(4)}° N · {detection.lng?.toFixed(4)}° E
       </div>
     </div>
   );
 }
+
+/* =========================================================
+   REAL FIRMS EVENT TREND
+   ========================================================= */
 
 function TenDayTrend() {
   const { DETECTIONS, FIRMS_METADATA } = useLiveData();
@@ -2074,7 +1868,13 @@ function MapPopup({
             <GasPanel
               detection={detection}
             />
+          </div>
+        </div>
 
+        <div className="thermal-view">
+          <ThermalMap detection={detection} />
+
+          <div className="thermal-detail-rows">
             <div className="thermal-meta-row">
               <small>PERSISTENCE CLUSTER</small>
               <strong>
@@ -2112,20 +1912,6 @@ function MapPopup({
             </div>
           </div>
         </div>
-
-        <div className="thermal-view">
-          <ThermalMap
-            detection={detection}
-          />
-
-          <div className="thermal-desc">
-            <small>
-              INTELLIGENCE ASSESSMENT
-            </small>
-
-            <p>{detection.description}</p>
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -2146,9 +1932,6 @@ function Maps({
       types: Object.keys(TYPE_META),
       risks: Object.keys(RISK_META)
     });
-
-  const [locateTrigger, setLocateTrigger] =
-    useState(false);
 
   const [satelliteMode, setSatelliteMode] =
     useState(true);
@@ -2194,12 +1977,6 @@ function Maps({
     mapRef.current?.zoomOut();
   };
 
-  const locate = () => {
-    setLocateTrigger(
-      (value) => !value
-    );
-  };
-
   const fullscreen = () => {
     const mapStage =
       document.querySelector(
@@ -2222,7 +1999,6 @@ function Maps({
         setFilters={setFilters}
         resultCount={filtered.length}
         onReset={reset}
-        onLocate={locate}
         onSatellite={() =>
           setSatelliteMode(
             (value) => !value
@@ -2231,7 +2007,6 @@ function Maps({
         satelliteMode={
           satelliteMode
         }
-        theme={theme}
         mobileOpen={
           mobileFilterOpen
         }
@@ -2263,9 +2038,6 @@ function Maps({
           setSelected={
             setSelectedDetection
           }
-          locateTrigger={
-            locateTrigger
-          }
           satelliteMode={
             satelliteMode
           }
@@ -2278,10 +2050,8 @@ function Maps({
             }`}
         >
           {satelliteMode
-            ? "SATELLITE MODE"
-            : theme === "light"
-              ? "LIGHT BASEMAP"
-              : "DARK BASEMAP"}
+            ? "SATELLITE"
+            : "VECTOR"}
         </div>
 
         <div className="map-overlay-controls">
@@ -2297,13 +2067,6 @@ function Maps({
             title="Zoom out"
           >
             −
-          </button>
-
-          <button
-            onClick={locate}
-            title="Locate me"
-          >
-            ◎
           </button>
 
           <button
@@ -3091,323 +2854,7 @@ function Analytics() {
 }
 
 /* =========================================================
-   ALERT TIMELINE
-========================================================= */
-
-function AlertTimeline({
-  setSelectedDetection
-}) {
-  const { DETECTIONS = [] } = useLiveData();
-  const topDetections = [...(DETECTIONS || [])]
-    .sort((a, b) => {
-      const ra =
-        (RISK_ORDER[a.risk] || 0) +
-        (a.brightness || 0) / 400;
-      const rb =
-        (RISK_ORDER[b.risk] || 0) +
-        (b.brightness || 0) / 400;
-      return rb - ra;
-    })
-    .slice(0, 3);
-  const alerts = topDetections.map(
-    (d, index) => ({
-      detectionId: d.id,
-      risk: d.risk,
-      name: d.name,
-      details: `${TYPE_LABEL[d.type] || "THERMAL ANOMALY"} · ${d.persistenceCount || 1} cluster observations`,
-      count: `${d.brightness ? d.brightness + " K" : "—"} / ${d.frp ? d.frp + " MW" : "—"}`,
-      time: d.time,
-      status:
-        index === 0
-          ? "INVESTIGATING"
-          : "MONITORING"
-    })
-  );
-
-  return (
-    <div className="alert-timeline">
-      {alerts.map(
-        (alert, index) => {
-          const detection =
-            (DETECTIONS || []).find(
-              (item) =>
-                item.id ===
-                alert.detectionId
-            );
-
-          return (
-            <div
-              className="timeline-item reveal"
-              key={alert.detectionId}
-              onClick={() =>
-                detection &&
-                setSelectedDetection &&
-                setSelectedDetection(
-                  detection
-                )
-              }
-            >
-              <div
-                className="timeline-marker"
-                style={{
-                  background:
-                    RISK_META[
-                    alert.risk
-                    ]
-                }}
-              >
-                {String(
-                  index + 1
-                ).padStart(2, "0")}
-              </div>
-
-              <div className="timeline-content">
-                <div className="timeline-top">
-                  <span
-                    style={{
-                      color:
-                        RISK_META[
-                        alert.risk
-                        ]
-                    }}
-                  >
-                    {(alert.risk || "").toUpperCase()}
-                  </span>
-
-                  <time>
-                    {alert.time}
-                  </time>
-                </div>
-
-                <h3>
-                  {alert.name}
-                </h3>
-
-                <p>
-                  {alert.details}
-                </p>
-
-                <div className="timeline-bottom">
-                  <span>
-                    {alert.count}
-                  </span>
-
-                  <b>
-                    {alert.status}
-                  </b>
-                </div>
-              </div>
-            </div>
-          );
-        }
-      )}
-    </div>
-  );
-}
-
-/* =========================================================
-   ALERTS PAGE
-========================================================= */
-
-function Alerts({
-  setSelectedDetection
-}) {
-  const { DETECTIONS = [], COUNT_BY_RISK = {} } =
-    useLiveData();
-  const [expanded, setExpanded] =
-    useState(false);
-
-  return (
-    <main className="page alerts-page">
-      <section className="alerts-hero reveal">
-        <div className="alerts-title-block">
-          <div className="eyebrow">
-            05 / EMERGENCY OPERATIONS
-          </div>
-
-          <h1>
-            Firewatch
-            <br />
-            <em>Alert Center</em>
-          </h1>
-
-          <p>
-            Prioritized fire events requiring
-            attention.
-          </p>
-        </div>
-
-        <div className="alert-summary">
-          <div>
-            <strong>
-              {COUNT_BY_RISK?.Critical ?? 0}
-            </strong>
-            <span>CRITICAL</span>
-          </div>
-
-          <div>
-            <strong>
-              {COUNT_BY_RISK?.High ?? 0}
-            </strong>
-            <span>HIGH</span>
-          </div>
-
-          <div>
-            <strong>
-              {COUNT_BY_RISK?.Medium ?? 0}
-            </strong>
-            <span>MEDIUM</span>
-          </div>
-
-          <div>
-            <strong>
-              {COUNT_BY_RISK?.Low ?? 0}
-            </strong>
-            <span>LOW</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="priority-section">
-        <SectionHeading
-          eyebrow="PRIORITY QUEUE"
-          title="Priority Alerts"
-          description="Thermal events prioritized using the FIRMS brightness, FRP and clustered observation count fields."
-        />
-
-        <AlertTimeline
-          setSelectedDetection={
-            setSelectedDetection
-          }
-        />
-      </section>
-
-      <section className="why-alert">
-        <button
-          className="why-alert-heading"
-          onClick={() =>
-            setExpanded(
-              (value) => !value
-            )
-          }
-        >
-          <div>
-            <div className="eyebrow">
-              INTELLIGENCE EXPLANATION
-            </div>
-
-            <h2>
-              WHY THIS ALERT?
-            </h2>
-          </div>
-
-          <span>
-            {expanded ? "−" : "+"}
-          </span>
-        </button>
-
-        <div
-          className={`why-content ${expanded
-            ? "expanded"
-            : ""
-            }`}
-        >
-          {[
-            "FIRMS thermal anomaly observed",
-            "Multiple observations in the demo cluster",
-            "Brightness and FRP recorded by NASA FIRMS",
-            "India boundary filter passed",
-            "PS category is pre-classified for the demo",
-            "Priority is a transparent demo heuristic"
-          ].map((item) => (
-            <div key={item}>
-              <span>✓</span>
-              {item}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="history-section">
-        <SectionHeading
-          eyebrow="EVENT ARCHIVE"
-          title="Alert History"
-        />
-
-        <div className="history-table">
-          <div className="history-header">
-            <span>INDEX</span>
-            <span>AREA</span>
-            <span>STATUS</span>
-            <span>DETECTED</span>
-            <span>RISK</span>
-          </div>
-
-          {DETECTIONS.slice(
-            0,
-            9
-          ).map(
-            (
-              detection,
-              index
-            ) => (
-              <div
-                className="history-row"
-                key={detection.id}
-                onClick={() =>
-                  setSelectedDetection(
-                    detection
-                  )
-                }
-              >
-                <span>
-                  {String(
-                    index + 1
-                  ).padStart(
-                    2,
-                    "0"
-                  )}
-                </span>
-
-                <strong>
-                  {detection.name}
-                </strong>
-
-                <span className="status-text">
-                  {index % 3 ===
-                    0
-                    ? "RESOLVED"
-                    : index % 2 ===
-                      0
-                      ? "MONITORING"
-                      : "INVESTIGATING"}
-                </span>
-
-                <span>
-                  {detection.time}
-                </span>
-
-                <b
-                  style={{
-                    color:
-                      RISK_META[
-                      detection.risk
-                      ]
-                  }}
-                >
-                  {detection.risk.toUpperCase()}
-                </b>
-              </div>
-            )
-          )}
-        </div>
-      </section>
-    </main>
-  );
-}
-
-/* =========================================================
-   SEARCH OVERLAY
+   NOTIFICATION PANEL
 ========================================================= */
 
 function SearchOverlay({
@@ -3416,98 +2863,48 @@ function SearchOverlay({
   setSelectedDetection
 }) {
   const { DETECTIONS } = useLiveData();
-  const [query, setQuery] =
-    useState("");
+  const [query, setQuery] = useState("");
 
   const results = useMemo(() => {
-    if (!query.trim()) {
-      return [];
-    }
-
-    const normalized =
-      query
-        .trim()
-        .toLowerCase();
-
+    if (!query.trim()) return [];
+    const normalized = query.trim().toLowerCase();
     return DETECTIONS.filter(
       (detection) =>
-        detection.name
-          .toLowerCase()
-          .includes(normalized) ||
-        detection.type
-          .toLowerCase()
-          .includes(normalized) ||
-        detection.risk
-          .toLowerCase()
-          .includes(normalized) ||
-        detection.source
-          .toLowerCase()
-          .includes(normalized) ||
-        (detection.contextName || "")
-          .toLowerCase()
-          .includes(normalized) ||
-        detection.lat
-          .toString()
-          .includes(normalized) ||
-        detection.lng
-          .toString()
-          .includes(normalized)
+        detection.name.toLowerCase().includes(normalized) ||
+        detection.type.toLowerCase().includes(normalized) ||
+        detection.risk.toLowerCase().includes(normalized) ||
+        detection.source.toLowerCase().includes(normalized) ||
+        (detection.contextName || "").toLowerCase().includes(normalized) ||
+        detection.lat.toString().includes(normalized) ||
+        detection.lng.toString().includes(normalized)
     ).slice(0, 10);
   }, [query, DETECTIONS]);
 
-  const chooseResult = (
-    result
-  ) => {
-    setSelectedDetection(
-      result
-    );
-
+  const chooseResult = (result) => {
+    setSelectedDetection(result);
     setPage("Maps");
-
     onClose();
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <div className="search-overlay">
       <div className="search-inner">
         <div className="search-top">
-          <span>
-            AGNI DRISHTI / GLOBAL SEARCH
-          </span>
-
-          <button
-            onClick={onClose}
-          >
-            ESC ×
-          </button>
+          <span>AGNI DRISHTI / GLOBAL SEARCH</span>
+          <button onClick={onClose}>ESC ×</button>
         </div>
 
         <div className="search-input-wrap">
           <span>⌕</span>
-
           <input
             autoFocus
             value={query}
-            onChange={(e) =>
-              setQuery(
-                e.target.value
-              )
-            }
-            placeholder="Search facilities, regions, coordinates or alerts..."
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search facilities, regions, coordinates or events..."
           />
-
           {query && (
-            <button
-              className="search-clear"
-              onClick={() =>
-                setQuery("")
-              }
-            >
+            <button className="search-clear" onClick={() => setQuery("")}>
               CLEAR
             </button>
           )}
@@ -3520,75 +2917,32 @@ function SearchOverlay({
         </div>
 
         <div className="search-results">
-          {query &&
-            results.length ===
-            0 && (
-              <div className="empty-search">
-                NO MATCHING
-                INTELLIGENCE FOUND
-              </div>
-            )}
-
-          {results.map(
-            (result) => (
-              <button
-                key={result.id}
-                onClick={() =>
-                  chooseResult(
-                    result
-                  )
-                }
-              >
-                <span>
-                  {String(
-                    result.id
-                  ).padStart(
-                    2,
-                    "0"
-                  )}
-                </span>
-
-                <div>
-                  <strong>
-                    {result.name}
-                  </strong>
-
-                  <small>
-                    {
-                      TYPE_META[
-                        result.type
-                      ].label
-                    }{" "}
-                    ·{" "}
-                    {result.risk.toUpperCase()}
-                  </small>
-                </div>
-
-                <small className="search-coord">
-                  {result.lat.toFixed(
-                    4
-                  )}
-                  ° N
-                  <br />
-                  {result.lng.toFixed(
-                    4
-                  )}
-                  ° E
-                </small>
-
-                <b>↗</b>
-              </button>
-            )
+          {query && results.length === 0 && (
+            <div className="empty-search">NO MATCHING INTELLIGENCE FOUND</div>
           )}
+
+          {results.map((result) => (
+            <button key={result.id} onClick={() => chooseResult(result)}>
+              <span>{String(result.id).padStart(2, "0")}</span>
+              <div>
+                <strong>{result.name}</strong>
+                <small>
+                  {TYPE_META[result.type].label} · {result.risk.toUpperCase()}
+                </small>
+              </div>
+              <small className="search-coord">
+                {result.lat.toFixed(4)}° N
+                <br />
+                {result.lng.toFixed(4)}° E
+              </small>
+              <b>↗</b>
+            </button>
+          ))}
         </div>
       </div>
     </div>
   );
 }
-
-/* =========================================================
-   NOTIFICATION PANEL
-========================================================= */
 
 function NotificationPanel({
   setSelectedDetection,
@@ -3696,16 +3050,6 @@ function NotificationPanel({
         )
       )}
 
-      <button
-        className="all-notifications"
-        onClick={() => {
-          setPage("Alerts");
-          onClose();
-        }}
-      >
-        OPEN ALERT CENTER
-        <span>↗</span>
-      </button>
     </div>
   );
 }
@@ -4622,8 +3966,7 @@ select:focus-visible {
 }
 
 .hero h1 em,
-.analytics-hero h1 em,
-.alerts-hero h1 em {
+.analytics-hero h1 em {
   color: #D7DCE2;
   font-style: normal;
   font-weight: 500;
@@ -5261,18 +4604,23 @@ select:focus-visible {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 290px 1fr;
+  grid-template-columns: 260px 1fr;
   min-height: calc(100vh - 82px);
   padding-top: 82px;
 }
 
 .filter-rail {
-  position: relative;
+  position: sticky;
+  top: 82px;
   z-index: 20;
-  padding: 45px 27px 30px;
+  align-self: start;
+  height: calc(100vh - 82px);
+  max-height: calc(100vh - 82px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 40px 24px 26px;
   border-right: 1px solid var(--line);
   background: rgba(5,7,10,.96);
-  min-height: calc(100vh - 82px);
   display: flex;
   flex-direction: column;
 }
@@ -5370,6 +4718,13 @@ select:focus-visible {
   flex: 0 0 13px;
 }
 
+.check-row input:focus-visible + .fake-check,
+.check-row input:focus-visible + .risk-check,
+.check-row:focus-within .fake-check {
+  outline: 2px solid var(--orange);
+  outline-offset: 3px;
+}
+
 .check-row input:checked + .fake-check {
   border-color: var(--orange);
   background: var(--orange);
@@ -5439,8 +4794,9 @@ select:focus-visible {
   cursor: pointer;
   text-align: left;
   font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: .08em;
+  font-size: 11px;
+  letter-spacing: .06em;
+  font-weight: 600;
   transition: color .2s ease;
 }
 
@@ -5468,6 +4824,10 @@ select:focus-visible {
   margin: 3px 0;
   font-size: 24px;
   font-weight: 600;
+}
+
+.filter-backdrop {
+  display: none;
 }
 
 .close-mobile-filter,
@@ -5854,7 +5214,7 @@ select:focus-visible {
   z-index: 30;
   top: 120px;
   right: 32px;
-  width: min(420px,calc(100% - 64px));
+  width: min(760px,calc(100% - 64px));
   max-height: calc(100% - 170px);
   overflow-y: auto;
   padding: 28px;
@@ -6175,6 +5535,12 @@ select:focus-visible {
   margin-bottom: 14px;
 }
 
+.thermal-detail-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
 .thermal-meta-row {
   display: flex;
   flex-direction: column;
@@ -6186,13 +5552,13 @@ select:focus-visible {
 .thermal-meta-row small {
   color: #66727E;
   font-family: var(--mono);
-  font-size: 8px;
-  letter-spacing: .1em;
+  font-size: 10px;
+  letter-spacing: .08em;
 }
 
 .thermal-meta-row strong {
   color: #C6CDD4;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
 }
 
@@ -6312,25 +5678,6 @@ select:focus-visible {
 
 .thermal-scale i:nth-child(5) {
   background: #ff3340;
-}
-
-.thermal-desc {
-  border-left: 2px solid #FF5A1F;
-  padding: 4px 14px;
-}
-
-.thermal-desc small {
-  color: #66727E;
-  font-family: var(--mono);
-  font-size: 8px;
-  letter-spacing: .1em;
-}
-
-.thermal-desc p {
-  margin: 6px 0 0;
-  color: #919CA7;
-  font-size: 13px;
-  line-height: 1.7;
 }
 
 @media (max-width: 860px) {
@@ -6961,292 +6308,6 @@ select:focus-visible {
 }
 
 /* =========================================================
-   ALERTS
-========================================================= */
-
-.alerts-page {
-  padding-bottom: 110px;
-}
-
-.alerts-hero {
-  min-height: 570px;
-  padding: 125px max(7vw,50px) 90px;
-  display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  align-items: end;
-  gap: 80px;
-  border-bottom: 1px solid var(--line);
-}
-
-.alerts-hero h1 {
-  margin: 18px 0 20px;
-  font-size: clamp(65px,9vw,120px);
-  line-height: .85;
-  letter-spacing: -.08em;
-  text-align: left;
-}
-
-.alerts-hero p {
-  color: var(--muted);
-  font-size: 17px;
-  text-align: left;
-}
-
-.alert-summary {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border-top: 1px solid var(--line);
-  border-left: 1px solid var(--line);
-}
-
-.alert-summary div {
-  min-height: 125px;
-  padding: 25px;
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-
-.alert-summary strong {
-  font-size: 47px;
-  line-height: 1;
-  letter-spacing: -.07em;
-}
-
-.alert-summary span {
-  margin-top: 12px;
-  color: #6D7884;
-  font-family: var(--mono);
-  font-size: 8px;
-  letter-spacing: .1em;
-}
-
-.priority-section {
-  padding: 100px max(5vw,30px);
-}
-
-.alert-timeline {
-  position: relative;
-  border-top: 1px solid var(--line);
-  margin-top: 50px;
-  padding-left: 70px;
-}
-
-.alert-timeline::before {
-  content: "";
-  position: absolute;
-  left: 23px;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: linear-gradient(
-    var(--orange),
-    rgba(255,90,31,.08)
-  );
-}
-
-.timeline-item {
-  position: relative;
-  min-height: 210px;
-  padding: 35px 0;
-  border-bottom: 1px solid var(--line);
-  cursor: pointer;
-  transition: padding .25s ease;
-}
-
-.timeline-item:hover {
-  padding-left: 10px;
-}
-
-.timeline-marker {
-  position: absolute;
-  left: -70px;
-  top: 35px;
-  width: 46px;
-  height: 46px;
-  display: grid;
-  place-items: center;
-  color: #05070A;
-  font-family: var(--mono);
-  font-size: 9px;
-  border-radius: 50%;
-  box-shadow: 0 0 25px rgba(255,90,31,.12);
-}
-
-.timeline-top {
-  display: flex;
-  justify-content: space-between;
-  max-width: 700px;
-  font-family: var(--mono);
-  font-size: 9px;
-}
-
-.timeline-top time {
-  color: #69747F;
-}
-
-.timeline-content h3 {
-  margin: 13px 0 5px;
-  font-size: 29px;
-  letter-spacing: -.04em;
-  text-align: left;
-}
-
-.timeline-content p {
-  margin: 0;
-  color: #818D98;
-  font-size: 14px;
-}
-
-.timeline-bottom {
-  max-width: 700px;
-  display: flex;
-  justify-content: space-between;
-  margin-top: 25px;
-  font-family: var(--mono);
-  font-size: 9px;
-}
-
-.timeline-bottom span {
-  color: #6C7782;
-}
-
-.timeline-bottom b {
-  color: #B6BEC6;
-  font-weight: 400;
-}
-
-.why-alert {
-  margin: 0 max(5vw,30px);
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-
-.why-alert-heading {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 35px 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  text-align: left;
-}
-
-.why-alert-heading h2 {
-  margin: 8px 0 0;
-  font-size: 34px;
-  letter-spacing: -.04em;
-  text-align: left;
-}
-
-.why-alert-heading > span {
-  color: var(--orange);
-  font-size: 28px;
-  font-weight: 300;
-}
-
-.why-content {
-  display: grid;
-  grid-template-columns: repeat(3,1fr);
-  gap: 0 50px;
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition:
-    max-height .5s ease,
-    opacity .35s ease,
-    padding .5s ease;
-}
-
-.why-content.expanded {
-  max-height: 300px;
-  padding: 0 0 35px;
-  opacity: 1;
-}
-
-.why-content div {
-  padding: 14px 0;
-  border-top: 1px solid var(--line);
-  color: #AEB6BE;
-  font-size: 14px;
-}
-
-.why-content span {
-  color: var(--green);
-  margin-right: 12px;
-}
-
-.history-section {
-  margin: 110px max(5vw,30px) 0;
-}
-
-.history-table {
-  border-top: 1px solid var(--line);
-}
-
-.history-header,
-.history-row {
-  display: grid;
-  grid-template-columns:
-    80px
-    1.8fr
-    160px
-    130px
-    100px;
-  gap: 20px;
-  align-items: center;
-}
-
-.history-header {
-  min-height: 55px;
-  color: #606C77;
-  font-family: var(--mono);
-  font-size: 8px;
-  text-align: left;
-}
-
-.history-row {
-  min-height: 80px;
-  border-top: 1px solid var(--line);
-  cursor: pointer;
-  transition: background .2s ease;
-  text-align: left;
-}
-
-.history-row:hover {
-  background: rgba(255,255,255,.025);
-}
-
-.history-row > span:first-child {
-  color: #56616C;
-  font-family: var(--mono);
-  font-size: 9px;
-  text-align: center;
-}
-
-.history-row strong {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.history-row .status-text,
-.history-row > span:nth-child(4) {
-  color: #78848F;
-  font-family: var(--mono);
-  font-size: 8px;
-}
-
-.history-row b {
-  font-family: var(--mono);
-  font-size: 8px;
-  font-weight: 500;
-}
-
-/* =========================================================
    SEARCH
 ========================================================= */
 
@@ -7667,10 +6728,6 @@ select:focus-visible {
     grid-template-columns: 55px 1fr 170px;
   }
 
-  .alerts-hero {
-    grid-template-columns: 1fr;
-    min-height: auto;
-  }
 }
 
 @media (max-width: 768px) {
@@ -7835,15 +6892,33 @@ select:focus-visible {
     left: 0;
     top: 64px;
     bottom: 0;
-    width: 290px;
+    width: 270px;
+    height: calc(100dvh - 64px);
+    max-height: calc(100dvh - 64px);
     min-height: auto;
     transform: translateX(-100%);
-    transition: transform .3s ease;
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform .3s ease, visibility .3s ease;
     overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .filter-rail.mobile-open {
     transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .filter-backdrop {
+    position: fixed;
+    inset: 64px 0 0;
+    z-index: 19;
+    display: block;
+    width: 100%;
+    border: 0;
+    background: rgba(0, 0, 0, .48);
+    cursor: pointer;
   }
 
   .mobile-filter-trigger {
@@ -7910,13 +6985,11 @@ select:focus-visible {
     display: none;
   }
 
-  .analytics-hero,
-  .alerts-hero {
+  .analytics-hero {
     padding: 95px 24px 70px;
   }
 
-  .analytics-hero h1,
-  .alerts-hero h1 {
+  .analytics-hero h1 {
     font-size: 60px;
   }
 
@@ -7997,50 +7070,6 @@ select:focus-visible {
     border-right: 0;
   }
 
-  .alerts-hero {
-    grid-template-columns: 1fr;
-    gap: 50px;
-  }
-
-  .alert-summary {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .alert-timeline {
-    padding-left: 45px;
-  }
-
-  .alert-timeline::before {
-    left: 15px;
-  }
-
-  .timeline-marker {
-    left: -45px;
-    width: 32px;
-    height: 32px;
-    top: 35px;
-  }
-
-  .timeline-content h3 {
-    font-size: 23px;
-  }
-
-  .why-content {
-    grid-template-columns: 1fr;
-  }
-
-  .history-header,
-  .history-row {
-    grid-template-columns: 40px 1fr 100px;
-  }
-
-  .history-header span:nth-child(4),
-  .history-header span:nth-child(5),
-  .history-row > span:nth-child(4),
-  .history-row > b {
-    display: none;
-  }
-
   .notification-panel,
   .profile-panel {
     top: 64px;
@@ -8105,13 +7134,8 @@ select:focus-visible {
     grid-template-columns: 1fr;
   }
 
-  .analytics-hero h1,
-  .alerts-hero h1 {
+  .analytics-hero h1 {
     font-size: 53px;
-  }
-
-  .alert-summary strong {
-    font-size: 36px;
   }
 
   .map-legend span:nth-child(n+3) {
@@ -8209,10 +7233,6 @@ html[data-theme="light"] .stat-label,
 html[data-theme="light"] .section-heading p,
 html[data-theme="light"] .category-copy p,
 html[data-theme="light"] .critical-header p,
-html[data-theme="light"] .alert-summary span,
-html[data-theme="light"] .timeline-content p,
-html[data-theme="light"] .timeline-top time,
-html[data-theme="light"] .timeline-bottom span,
 html[data-theme="light"] .critical-metric p {
   color: var(--muted);
 }
@@ -8230,7 +7250,6 @@ html[data-theme="light"] .gas-row strong {
 
 html[data-theme="light"] .hero h1 em,
 html[data-theme="light"] .analytics-hero h1 em,
-html[data-theme="light"] .alerts-hero h1 em,
 html[data-theme="light"] .intelligence-copy h2 span,
 html[data-theme="light"] .critical-header h2 span {
   color: #4F5E6A;
@@ -8250,11 +7269,7 @@ html[data-theme="light"] .chart-range,
 html[data-theme="light"] .ranking-row > span:not(.rank-number),
 html[data-theme="light"] .critical-location,
 html[data-theme="light"] .critical-event-risk span,
-html[data-theme="light"] .critical-event-risk small,
-html[data-theme="light"] .history-header,
-html[data-theme="light"] .history-row > span:first-child,
-html[data-theme="light"] .history-row .status-text,
-html[data-theme="light"] .history-row > span:nth-child(4) {
+html[data-theme="light"] .critical-event-risk small {
   color: var(--text-faint);
 }
 
@@ -8275,11 +7290,7 @@ html[data-theme="light"] .category-section,
 html[data-theme="light"] .critical-infrastructure,
 html[data-theme="light"] .analytics-main,
 html[data-theme="light"] .locations-section,
-html[data-theme="light"] .risk-distribution,
-html[data-theme="light"] .priority-section,
-html[data-theme="light"] .why-alert,
-html[data-theme="light"] .history-section,
-html[data-theme="light"] .alert-summary {
+html[data-theme="light"] .risk-distribution {
   background: var(--bg2);
   border-color: var(--line);
 }
@@ -8310,7 +7321,6 @@ html[data-theme="light"] .search-overlay {
 html[data-theme="light"] .detection-row.expanded,
 html[data-theme="light"] .detection-row-main:hover,
 html[data-theme="light"] .notification-panel > button:hover,
-html[data-theme="light"] .history-row:hover,
 html[data-theme="light"] .search-results > button:hover {
   background: var(--panel-soft);
 }
@@ -8469,9 +7479,7 @@ html[data-theme="light"] .map-popup-panel h2,
 html[data-theme="light"] .thermal-popup-head h2,
 html[data-theme="light"] .popup-close,
 html[data-theme="light"] .thermal-stats,
-html[data-theme="light"] .thermal-view,
-html[data-theme="light"] .thermal-meta-row strong,
-html[data-theme="light"] .thermal-desc p {
+html[data-theme="light"] .thermal-meta-row strong {
   color: var(--text);
 }
 
@@ -8487,8 +7495,7 @@ html[data-theme="light"] .ten-day-stats,
 html[data-theme="light"] .gasval-head,
 html[data-theme="light"] .gasval-row,
 html[data-theme="light"] .gas-row,
-html[data-theme="light"] .gas-row.gas-head,
-html[data-theme="light"] .thermal-desc small {
+html[data-theme="light"] .gas-row.gas-head {
   color: var(--text-faint);
   border-color: var(--line);
 }
@@ -8593,14 +7600,6 @@ html[data-theme="dark"] .app-logo {
 
           {page === "Analytics" && (
             <Analytics />
-          )}
-
-          {page === "Alerts" && (
-            <Alerts
-              setSelectedDetection={
-                setSelectedDetection
-              }
-            />
           )}
 
           {searchOpen && (

@@ -13,6 +13,13 @@ test("renders the AGNI DRISHTI FIRMS dashboard shell", () => {
   expect(screen.getByText(/INDIA FIRMS SNAPSHOT/i)).toBeInTheDocument();
 });
 
+test("defaults to dark theme without a saved preference", () => {
+  render(<App />);
+
+  expect(document.documentElement.dataset.theme).toBe("dark");
+  expect(document.documentElement.style.colorScheme).toBe("dark");
+});
+
 test("restores a persisted light theme when the app mounts", () => {
   window.localStorage.setItem("agni-drishti-theme", "light");
 
