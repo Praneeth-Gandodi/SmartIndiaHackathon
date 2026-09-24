@@ -2151,7 +2151,7 @@ function Maps({
     useState(false);
 
   const [satelliteMode, setSatelliteMode] =
-    useState(false);
+    useState(true);
 
   const [mobileFilterOpen, setMobileFilterOpen] =
     useState(false);
