@@ -248,6 +248,41 @@ function LoadingScreen({ onComplete }) {
    NAVBAR
 ========================================================= */
 
+function NavIcon({ name }) {
+  if (name === "search") {
+    return (
+      <svg className="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="10.8" cy="10.8" r="6.5" />
+        <path d="m16 16 5 5" />
+      </svg>
+    );
+  }
+
+  if (name === "bell") {
+    return (
+      <svg className="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+        <path d="M10 21h4" />
+      </svg>
+    );
+  }
+
+  if (name === "sun") {
+    return (
+      <svg className="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg className="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5 8.5 8.5 0 1 0 20.5 14.5Z" />
+    </svg>
+  );
+}
+
 function Navbar({
   page,
   setPage,
@@ -255,35 +290,8 @@ function Navbar({
   onNotifications,
   notificationOpen,
   theme,
-  onToggleTheme,
-  onProfile,
-  profileOpen
+  onToggleTheme
 }) {
-  const [time, setTime] = useState(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(
-      () => setTime(new Date()),
-      1000
-    );
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const clock = time.toLocaleTimeString("en-IN", {
-    hour12: false,
-    timeZone: "Asia/Kolkata"
-  });
-
-  const date = time
-    .toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      timeZone: "Asia/Kolkata"
-    })
-    .toUpperCase();
-
   const navigate = (next) => {
     setPage(next);
     window.scrollTo({
@@ -332,10 +340,14 @@ function Navbar({
         </div>
 
         <div className="nav-right">
-          <div className="nav-clock">
-            <strong>{clock}</strong>
-            <small>{date}</small>
-          </div>
+          <button
+            className="icon-button"
+            onClick={onSearch}
+            aria-label="Open search"
+            title="Search"
+          >
+            <NavIcon name="search" />
+          </button>
 
           <button
             className="icon-button theme-toggle"
@@ -344,15 +356,7 @@ function Navbar({
             aria-pressed={theme === "dark"}
             title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
           >
-            {theme === "dark" ? "☼" : "◐"}
-          </button>
-
-          <button
-            className="icon-button"
-            onClick={onSearch}
-            aria-label="Open search"
-          >
-            ⌕
+            <NavIcon name={theme === "dark" ? "sun" : "moon"} />
           </button>
 
           <button
@@ -360,18 +364,10 @@ function Navbar({
               }`}
             onClick={onNotifications}
             aria-label="Open notifications"
+            title="Notifications"
           >
-            ♢
+            <NavIcon name="bell" />
             <i />
-          </button>
-
-          <button
-            className={`profile profile-button ${profileOpen ? "active" : ""
-              }`}
-            onClick={onProfile}
-            aria-label="Open profile"
-          >
-            CW
           </button>
         </div>
       </nav>
@@ -3512,13 +3508,13 @@ select:focus-visible {
   top: 0;
   left: 0;
   right: 0;
-  height: 82px;
+  height: 68px;
   z-index: 1000;
   display: flex;
   align-items: center;
-  padding: 0 34px;
-  gap: 45px;
-  background: rgba(5,7,10,.84);
+  padding: 0 24px;
+  gap: 28px;
+  background: rgba(5,7,10,.92);
   backdrop-filter: blur(18px);
   border-bottom: 1px solid rgba(255,255,255,.07);
 }
@@ -3527,7 +3523,7 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 250px;
+  min-width: 220px;
   cursor: pointer;
 }
 
@@ -3568,7 +3564,7 @@ select:focus-visible {
   height: 100%;
   display: flex;
   align-items: center;
-  gap: 30px;
+  gap: 24px;
 }
 
 .nav-link {
@@ -3609,7 +3605,7 @@ select:focus-visible {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 8px;
 }
 
 .system-status {
@@ -3653,20 +3649,33 @@ select:focus-visible {
 
 .icon-button {
   position: relative;
-  width: 30px;
-  height: 30px;
-  border: 0;
-  background: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: rgba(255,255,255,.025);
   cursor: pointer;
-  font-size: 21px;
   color: #B9C2CC;
-  transition: color .2s ease, transform .2s ease;
+  transition: color .2s ease, background .2s ease, border-color .2s ease;
+}
+
+.nav-icon {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .icon-button:hover,
 .icon-button.selected {
   color: white;
-  transform: translateY(-1px);
+  background: rgba(255,255,255,.08);
+  border-color: var(--control-border);
 }
 
 .notification-button i {
@@ -3840,7 +3849,7 @@ select:focus-visible {
 .page {
   position: relative;
   z-index: 1;
-  padding-top: 82px;
+  padding-top: 68px;
   min-height: 100vh;
 }
 
@@ -3905,7 +3914,7 @@ select:focus-visible {
 }
 
 .hero {
-  min-height: calc(100vh - 82px);
+  min-height: calc(100vh - 68px);
   padding: 110px max(7vw,50px) 90px;
   display: flex;
   flex-direction: column;
@@ -4605,17 +4614,17 @@ select:focus-visible {
   z-index: 1;
   display: grid;
   grid-template-columns: 260px 1fr;
-  min-height: calc(100vh - 82px);
-  padding-top: 82px;
+  min-height: calc(100vh - 68px);
+  padding-top: 68px;
 }
 
 .filter-rail {
   position: sticky;
-  top: 82px;
+  top: 68px;
   z-index: 20;
   align-self: start;
-  height: calc(100vh - 82px);
-  max-height: calc(100vh - 82px);
+  height: calc(100vh - 68px);
+  max-height: calc(100vh - 68px);
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 40px 24px 26px;
@@ -4838,7 +4847,7 @@ select:focus-visible {
 .map-stage {
   position: relative;
   min-width: 0;
-  min-height: calc(100vh - 82px);
+  min-height: calc(100vh - 68px);
   overflow: hidden;
 }
 
@@ -6925,7 +6934,7 @@ select:focus-visible {
     display: block;
     position: fixed;
     z-index: 50;
-    top: 82px;
+    top: 68px;
     left: 15px;
     padding: 10px 12px;
     color: var(--orange);
@@ -7519,6 +7528,15 @@ html[data-theme="light"] .thermal-map-footer {
 
 html[data-theme="light"] .row-risk {
   color: var(--text-soft) !important;
+}
+
+html[data-theme="light"] .icon-button {
+  background: rgba(17,24,32,.04);
+}
+
+html[data-theme="light"] .icon-button:hover,
+html[data-theme="light"] .icon-button.selected {
+  background: rgba(17,24,32,.08);
 }
 
 html[data-theme="light"] .theme-toggle {
