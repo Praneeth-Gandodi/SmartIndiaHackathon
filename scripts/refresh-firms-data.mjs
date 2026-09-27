@@ -15,10 +15,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { classifyFromOsm, classifyFromGazetteer, contextKey } from "./lib/osm-classify.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const OUTPUT = path.join(ROOT, "src", "data", "firms-india-latest.json");
+const OSM_CONTEXT_FILE = path.join(ROOT, "src", "data", "osm-context.json");
+const OSM_GAZETTEER_FILE = path.join(ROOT, "src", "data", "osm-gazetteer.json");
 const ENV_FILE = path.join(ROOT, ".env");
 const INDIA_BOUNDARY_URL =
   "https://nominatim.openstreetmap.org/search?country=India&format=geojson&polygon_geojson=1&polygon_threshold=0.02";
@@ -60,6 +63,51 @@ const FOREST_BELTS = [
   { name: "Central India forest belt", minLat: 18.0, maxLat: 25.5, minLng: 76.0, maxLng: 86.0 },
   { name: "Western Ghats forest belt", minLat: 8.0, maxLat: 20.5, minLng: 72.8, maxLng: 77.8 }
 ];
+
+/*
+ * OpenStreetMap land-use context, keyed by rounded coordinate.
+ *
+ * The belts above are coarse rectangles: a "forest belt" spanning 12 degrees of
+ * longitude cannot know that a steel plant sits inside it, so real industrial
+ * sites get labelled as wildfire. Where OSM has a land-use polygon or a named
+ * feature at the coordinate, that is authoritative and wins.
+ *
+ * Populated by scripts/fetch-osm-context.mjs and applied by
+ * scripts/osm-reclassify.mjs. A refresh picks up whatever is already cached.
+ */
+let OSM_CONTEXT = {};
+let OSM_GAZETTEER = [];
+
+/** Number of belt-based classifications that OSM was able to correct. */
+let osmOverrides = 0;
+
+async function loadOsmContext() {
+  try {
+    const raw = await fs.readFile(OSM_CONTEXT_FILE, "utf8");
+    const parsed = JSON.parse(raw);
+    const usable = Object.values(parsed).filter(
+      (entry) => entry && Array.isArray(entry.features) && !entry.error
+    );
+    OSM_CONTEXT = parsed;
+    console.log(
+      `OSM land-use context: ${usable.length}/${Object.keys(parsed).length} locations available`
+    );
+  } catch {
+    console.log(
+      "OSM land-use context: none cached. Run scripts/fetch-osm-context.mjs to add it."
+    );
+  }
+
+  try {
+    const gazetteer = JSON.parse(await fs.readFile(OSM_GAZETTEER_FILE, "utf8"));
+    OSM_GAZETTEER = Array.isArray(gazetteer.sites) ? gazetteer.sites : [];
+    console.log(`OSM site gazetteer: ${OSM_GAZETTEER.length} mapped sites`);
+  } catch {
+    console.log(
+      "OSM site gazetteer: not built. Run scripts/fetch-osm-gazetteer.mjs to add it."
+    );
+  }
+}
 
 function readArgument(name, fallback) {
   const index = process.argv.indexOf(`--${name}`);
@@ -184,6 +232,49 @@ function regionFor(lat, lng) {
 }
 
 function classify(record) {
+  // Priority order, strongest evidence first.
+  //
+  // 1. Curated named complexes. These encode intent that generic land-use data
+  //    cannot: a gas terminal is mapped as plain `landuse=industrial` in OSM,
+  //    so letting OSM override them would erase the gas flare category.
+  // 2. OSM point-in-polygon, where per-detection polygons are cached. Exact.
+  // 3. OSM named-site gazetteer, by proximity. Catches real plants and mines
+  //    that no curated entry covers.
+  // 4. Coarse region belts, which are the fallback and are known to be blunt.
+  const curated = classifyFromCuratedSites(record);
+  const previous = classifyFromBelts(record);
+  if (curated) return { ...curated, method: "Demo pre-classified" };
+
+  const osmEntry = OSM_CONTEXT[contextKey(record.lat, record.lng)];
+  const osmVerdict =
+    (osmEntry ? classifyFromOsm(record, osmEntry.features) : null) ||
+    classifyFromGazetteer(record, OSM_GAZETTEER);
+
+  if (osmVerdict) {
+    if (!previous || previous.type !== osmVerdict.type) osmOverrides += 1;
+    return { ...osmVerdict, method: "Demo pre-classified (OSM land use)" };
+  }
+
+  return previous
+    ? { ...previous, method: "Demo pre-classified" }
+    : {
+        type: "Wildfire",
+        contextName: `${regionFor(record.lat, record.lng)} thermal anomaly`,
+        reason:
+          "Demo fallback label for a FIRMS thermal anomaly without a verified industrial, flare, mining, or agricultural context.",
+        method: "Demo pre-classified"
+      };
+}
+
+/**
+ * Curated named complexes, matched by proximity.
+ *
+ * Checked before OSM because these entries encode intent that generic land-use
+ * data cannot: a gas terminal or a gas flare site is mapped as plain
+ * `landuse=industrial` in OSM, so letting OSM win would erase the gas flare
+ * category entirely. They are specific named facilities, not region boxes.
+ */
+function classifyFromCuratedSites(record) {
   let nearest = null;
   let nearestDistance = Infinity;
   for (const site of SITE_CONTEXT) {
@@ -193,15 +284,24 @@ function classify(record) {
       nearestDistance = distance;
     }
   }
+  if (!nearest) return null;
+  return {
+    type: nearest.type,
+    contextName: nearest.name,
+    reason: `Demo pre-classification from curated ${nearest.name.toLowerCase()} context (${nearestDistance.toFixed(
+      1
+    )} km from reference point).`
+  };
+}
 
-  if (nearest) {
-    return {
-      type: nearest.type,
-      contextName: nearest.name,
-      reason: `Demo pre-classification from curated ${nearest.name.toLowerCase()} context (${nearestDistance.toFixed(1)} km from reference point).`
-    };
-  }
-
+/**
+ * Coarse region belts, the last resort before the bare fallback.
+ *
+ * These rectangles are deliberately blunt: a "forest belt" spanning 12 degrees
+ * of longitude cannot know a steel plant sits inside it, which is why OSM and
+ * the curated site list are consulted first.
+ */
+function classifyFromBelts(record) {
   const agricultural = AGRICULTURAL_BELTS.find(
     (belt) =>
       record.lat >= belt.minLat &&
@@ -346,7 +446,7 @@ function buildDetections(records) {
       time: displayTime(observedAt),
       isoDate: cluster.representative.acqDate,
       contextName: classification.contextName,
-      classificationMethod: "Demo pre-classified",
+      classificationMethod: classification.method || "Demo pre-classified",
       classificationReasons: [
         classification.reason,
         `${persistenceLabel}; first seen ${displayDate(new Date(cluster.firstObservedAt))}.`,
@@ -398,6 +498,7 @@ async function main() {
   if (!key) {
     throw new Error("FIRMS_MAP_KEY is missing. Add it to the ignored .env file or set it for this command.");
   }
+  await loadOsmContext();
 
   const days = Math.min(7, Math.max(5, Number(readArgument("days", "7"))));
   const end = utcDate(readArgument("end", formatDate(new Date())));
@@ -461,8 +562,12 @@ async function main() {
       clusteredCount: new Set(normalized.map(clusterKey)).size,
       includedDetectionCount: detections.length,
       countsByType,
-      classificationStatus: "Pre-classified for selection demo; not trained-model output",
-      integrityNote: "Coordinates, acquisition times, brightness, FRP, satellite, instrument and detection confidence originate from NASA FIRMS."
+      classificationStatus:
+        "Pre-classified for selection demo using OpenStreetMap land-use context where available; not trained-model output",
+      integrityNote: "Coordinates, acquisition times, brightness, FRP, satellite, instrument and detection confidence originate from NASA FIRMS.",
+      landUseSource:
+        "Land-use context from OpenStreetMap via Overpass API (ODbL), matched by point-in-polygon.",
+      osmCorrectedCount: osmOverrides
     },
     detections
   };
@@ -473,6 +578,9 @@ async function main() {
     `Wrote ${detections.length} representative detections from ${normalized.length} quality-filtered India records to ${path.relative(ROOT, OUTPUT)}`
   );
   console.log(`Type counts: ${JSON.stringify(countsByType)}`);
+  console.log(
+    `OSM land use corrected ${osmOverrides} belt-based classification(s).`
+  );
 }
 
 main().catch((error) => {

@@ -23,6 +23,10 @@ build/
 # Local agent/browser artifacts
 .playwright-mcp/
 
+# Optional per-detection OSM polygon cache. Large and regenerable with
+# `npm run firms:osm:detail`; the committed gazetteer covers the same cases.
+src/data/osm-context.json
+
 # Unused demo media and stale assets
 /public/ref_frame_*.jpg
 /public/satellite.jpg
@@ -39,6 +43,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+osm-fetch.log
+osm-gazetteer.log
 
 # IDE
 .vscode/

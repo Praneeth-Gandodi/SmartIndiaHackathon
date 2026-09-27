@@ -92,6 +92,66 @@ To choose an explicit end date:
 npm run firms:refresh -- --days 7 --end 2026-09-24
 ```
 
+## Land-use context and classification
+
+FIRMS reports *that* a thermal anomaly was observed at a coordinate. It does not
+report what kind of place that coordinate is, and for PS 26162 the category
+depends entirely on the land use: the same observation is a different PS class
+over a steel plant than over a forest.
+
+Categories are therefore resolved against OpenStreetMap land use, queried
+through the Overpass API (ODbL). A mapped `landuse=industrial` polygon that
+contains the observation is authoritative, so a real industrial site is not
+labelled wildfire just because it falls inside a coarse region box.
+
+After refreshing, run:
+
+```bash
+npm run firms:osm          # build the OSM site gazetteer (one request)
+npm run firms:reclassify   # re-apply the PS categories using that context
+```
+
+`firms:osm` needs network access and writes `src/data/osm-gazetteer.json`: a
+compact list of mapped industrial, mining and flare sites across India, fetched
+with a single Overpass request. A per-detection lookup would need roughly a
+hundred requests, which the public endpoints rate limit long before it
+finishes, so the gazetteer is the primary source.
+
+For extra accuracy on specific locations there is an optional detail pass that
+stores real OSM polygons for point-in-polygon tests:
+
+```bash
+npm run firms:osm:detail
+```
+
+It writes `src/data/osm-context.json`, which is not committed because it is
+large and regenerable. It needs more requests, and is safe to rerun because it
+resumes where it stopped. Detections with no mapped land use keep their coarser
+curated label, which is the correct answer for genuinely forested or fallow
+areas.
+
+### Category priority
+
+Labels are resolved strongest-evidence-first, because a generic land-use
+polygon can silently erase a PS category:
+
+1. **Curated named complexes.** These encode intent OSM cannot: a gas terminal
+   is mapped as plain `landuse=industrial`, so letting OSM win would drop the
+   gas flare category entirely.
+2. **OSM named sites, by proximity.** Only named facilities count. India has
+   tens of thousands of small unnamed `landuse=industrial` plots, frequently a
+   shed beside a road, and matching those would pull rural wildfires into the
+   industrial class.
+3. **OSM polygons, by point-in-polygon.** Exact, used where the detail pass has
+   cached them.
+4. **Coarse region belts.** The last resort. A "forest belt" spanning 12
+   degrees of longitude is what originally mislabelled real steel plants.
+
+`firms:reclassify` only rewrites the demo category, context name and reason. It
+never touches the authentic FIRMS values: coordinates, acquisition time,
+brightness, FRP, satellite, instrument and detection confidence are left
+exactly as NASA reported them.
+
 ## Test and production build
 
 Run the automated tests once:
@@ -122,6 +182,9 @@ The production build can be deployed to Netlify, Vercel or any static hosting pr
 | `npm test -- --watchAll=false --runInBand` | Run tests once |
 | `npm run build` | Create the production build |
 | `npm run firms:refresh` | Refresh the India FIRMS snapshot |
+| `npm run firms:osm` | Build the OSM site gazetteer |
+| `npm run firms:osm:detail` | Fetch per-detection OSM polygons (optional) |
+| `npm run firms:reclassify` | Re-apply PS categories using OSM land use |
 | `npm run email-server` | Start the optional local SMS server |
 | `npm run dev` | Start the SMS server and React development server together |
 
@@ -132,9 +195,14 @@ src/
   App.js                         Main application and UI
   live.js                        FIRMS data context and derived metrics
   data/firms-india-latest.json   Checked-in India FIRMS snapshot
+  data/osm-gazetteer.json        Mapped OSM industrial/mining/flare sites
   components/SatelliteEarth.jsx  Procedural satellite visualization
 scripts/
   refresh-firms-data.mjs         Local FIRMS snapshot refresh script
+  fetch-osm-gazetteer.mjs        Builds the OSM site gazetteer
+  fetch-osm-context.mjs          Optional per-detection OSM polygon pass
+  osm-reclassify.mjs             Re-applies PS categories from OSM land use
+  lib/osm-classify.mjs           OSM tag mapping, point-in-polygon, matching
 server/
   index.js                       Optional local SMS server
 public/
