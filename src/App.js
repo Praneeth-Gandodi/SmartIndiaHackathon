@@ -303,9 +303,11 @@ function Navbar({
   return (
     <>
       <nav className="navbar">
-        <div
+        <button
+          type="button"
           className="brand"
           onClick={() => navigate("Dashboard")}
+          aria-label="Go to AGNI DRISHTI dashboard"
         >
           <div className="brand-mark">
             <img src="/logo.svg" alt="AGNI DRISHTI logo" className="app-logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -320,7 +322,7 @@ function Navbar({
               GEOSPATIAL INTELLIGENCE
             </div>
           </div>
-        </div>
+        </button>
 
         <div className="nav-links">
           {[
@@ -436,18 +438,20 @@ function ProfilePanel({ onClose, setPage }) {
    STAT STRIP
 ========================================================= */
 
-function StatStrip() {
+function StatStrip({ detections: filteredDetections } = {}) {
   const {
     TOTAL_DETECTIONS,
-    COUNT_BY_TYPE
+    DETECTIONS
   } = useLiveData();
+  const source = filteredDetections || DETECTIONS;
+  const total = filteredDetections ? filteredDetections.length : TOTAL_DETECTIONS;
   const stats = [
-    [String(TOTAL_DETECTIONS), "FIRMS EVENTS"],
-    [String(COUNT_BY_TYPE.Industrial), "INDUSTRIAL"],
-    [String(COUNT_BY_TYPE.GasFlare), "GAS FLARES"],
-    [String(COUNT_BY_TYPE.Agricultural), "AGRICULTURAL"],
-    [String(COUNT_BY_TYPE.Mining), "MINING"],
-    [String(COUNT_BY_TYPE.Wildfire), "WILDFIRE"]
+    [String(total), "FIRMS EVENTS"],
+    [String(source.filter((d) => d.type === "Industrial").length), "INDUSTRIAL"],
+    [String(source.filter((d) => d.type === "GasFlare").length), "GAS FLARES"],
+    [String(source.filter((d) => d.type === "Agricultural").length), "AGRICULTURAL"],
+    [String(source.filter((d) => d.type === "Mining").length), "MINING"],
+    [String(source.filter((d) => d.type === "Wildfire").length), "WILDFIRE"]
   ];
 
   return (
@@ -525,7 +529,17 @@ function DetectionRow({
     >
       <div
         className="detection-row-main"
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        aria-label={`${expanded ? "Collapse" : "Expand"} ${detection.name}`}
         onClick={() => onToggle?.(detection)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onToggle?.(detection);
+          }
+        }}
       >
         <div className="row-index">
           {String(index + 1).padStart(2, "0")}
@@ -1288,7 +1302,7 @@ function renderMarkers(
             <span>OBSERVATION TIME</span>
             <b>${detection.time}</b>
           </div>
-          <div class="fw-tt-trend" style="color:#FFC857">
+          <div class="fw-tt-trend" style="color:var(--yellow)">
             ${detection.satellite} · ${detection.instrument} · FIRMS
           </div>
         </div>
@@ -1633,7 +1647,7 @@ function TenDayTrend() {
     <div className="ten-day-wrap">
       <div className="ten-day-head">
         <span>REAL FIRMS EVENT COUNTS · 7-DAY WINDOW</span>
-        <b style={{ color: delta >= 0 ? "#FF3040" : "#36D399" }}>
+        <b style={{ color: delta >= 0 ? "var(--red)" : "var(--green)" }}>
           {delta >= 0 ? "+" : ""}{pct}%
         </b>
       </div>
@@ -1645,7 +1659,7 @@ function TenDayTrend() {
               className={`ten-day-bar ${index === counts.length - 1 ? "today" : ""}`}
               style={{
                 height: `${Math.max(4, (day.value / max) * 100)}%`,
-                background: index === counts.length - 1 ? "#FF3040" : "rgba(255, 88, 40, .55)"
+                background: index === counts.length - 1 ? "var(--red)" : "color-mix(in srgb, var(--orange) 55%, transparent)"
               }}
             />
             <span>{day.label}</span>
@@ -1695,16 +1709,19 @@ function MapPopup({
       <button
         className="popup-close"
         onClick={onClose}
+        aria-label="Close selected detection"
       >
         ×
       </button>
 
       <div className="thermal-popup-head">
         <div className="eyebrow">
-          {TYPE_META[
-            detection.type
-          ].label}{" "}
-          / THERMAL EVENT · GEO-THERMAL
+          CLASSIFIED CATEGORY · THERMAL EVENT
+        </div>
+
+        <div className="classification-label">
+          <span>{TYPE_META[detection.type].label}</span>
+          <small>PS 26162 CLASS</small>
         </div>
 
         <h2>{detection.name}</h2>
@@ -2184,13 +2201,13 @@ function TrendChart({ detections = [] }) {
             >
               <stop
                 offset="0%"
-                stopColor="#FF5A1F"
+                stopColor="var(--orange)"
                 stopOpacity=".35"
               />
 
               <stop
                 offset="100%"
-                stopColor="#FF5A1F"
+                stopColor="var(--orange)"
                 stopOpacity="0"
               />
             </linearGradient>
@@ -2317,13 +2334,14 @@ function TrendChart({ detections = [] }) {
 function Classification({ detections = [] }) {
   const total = Math.max(detections.length, 1);
   const values = [
-    ["Industrial", detections.filter((d) => d.type === "Industrial").length, "#FF5A1F"],
-    ["Gas flare", detections.filter((d) => d.type === "GasFlare").length, "#42A5FF"],
-    ["Agricultural", detections.filter((d) => d.type === "Agricultural").length, "#FFC857"],
-    ["Mining", detections.filter((d) => d.type === "Mining").length, "#B68CFF"],
-    ["Wildfire", detections.filter((d) => d.type === "Wildfire").length, "#36D399"]
+    ["Industrial", detections.filter((d) => d.type === "Industrial").length, "var(--orange)"],
+    ["Gas flare", detections.filter((d) => d.type === "GasFlare").length, "var(--blue)"],
+    ["Agricultural", detections.filter((d) => d.type === "Agricultural").length, "var(--yellow)"],
+    ["Mining", detections.filter((d) => d.type === "Mining").length, "#8064C9"],
+    ["Wildfire", detections.filter((d) => d.type === "Wildfire").length, "var(--green)"]
   ].map(([label, value, color]) => [
     label,
+    value,
     Math.round((value / total) * 100),
     color
   ]);
@@ -2338,7 +2356,7 @@ function Classification({ detections = [] }) {
 
       <div className="classification-bars">
         {values.map(
-          ([label, value, color]) => (
+          ([label, count, value, color]) => (
             <div
               className="classification-row"
               key={label}
@@ -2346,7 +2364,7 @@ function Classification({ detections = [] }) {
               <div className="classification-top">
                 <span>{label}</span>
                 <strong>
-                  {value}%
+                  {count} EVENTS · {value}%
                 </strong>
               </div>
 
@@ -2377,12 +2395,13 @@ function RiskDistribution({ detections = [] }) {
     Medium: detections.filter((d) => d.risk === "Medium").length,
     Low: detections.filter((d) => d.risk === "Low").length
   };
+  const total = Math.max(detections.length, 1);
   const maxRisk = Math.max(...Object.values(counts), 1);
   const values = [
-    ["CRITICAL", counts.Critical, "#FF3040"],
-    ["HIGH", counts.High, "#FF8A1F"],
-    ["MEDIUM", counts.Medium, "#FFC857"],
-    ["LOW", counts.Low, "#36D399"]
+    ["CRITICAL", counts.Critical, Math.round((counts.Critical / total) * 100), "var(--red)"],
+    ["HIGH", counts.High, Math.round((counts.High / total) * 100), "var(--high)"],
+    ["MEDIUM", counts.Medium, Math.round((counts.Medium / total) * 100), "var(--yellow)"],
+    ["LOW", counts.Low, Math.round((counts.Low / total) * 100), "var(--green)"]
   ];
 
   return (
@@ -2397,7 +2416,7 @@ function RiskDistribution({ detections = [] }) {
 
       <div className="risk-bars">
         {values.map(
-          ([label, value, color]) => (
+          ([label, value, percent, color]) => (
             <div
               className="risk-bar-row"
               key={label}
@@ -2405,7 +2424,7 @@ function RiskDistribution({ detections = [] }) {
               <div className="risk-bar-label">
                 <span>{label}</span>
                 <strong>
-                  {value}
+                  {value} · {percent}%
                 </strong>
               </div>
 
@@ -2431,39 +2450,36 @@ function RiskDistribution({ detections = [] }) {
    CRITICAL INFRASTRUCTURE SECTION
 ========================================================= */
 
-function CriticalInfrastructure() {
-  const {
-    TOP_DETECTION,
-    TOTAL_DETECTIONS,
-    DETECTIONS
-  } = useLiveData();
-
-  const top = TOP_DETECTION || (DETECTIONS && DETECTIONS[0]);
+function CriticalInfrastructure({ detections = [] }) {
+  const { DETECTIONS } = useLiveData();
+  const source = detections.length ? detections : DETECTIONS;
+  const top = [...source].sort((a, b) => {
+    const riskDifference = (RISK_ORDER[b.risk] || 0) - (RISK_ORDER[a.risk] || 0);
+    return riskDifference || (b.frp || 0) - (a.frp || 0);
+  })[0];
   if (!top) return null;
 
-  const totalCount = TOTAL_DETECTIONS || DETECTIONS.length;
+  const totalCount = source.length;
 
   return (
     <section className="critical-infrastructure">
       <div className="critical-header">
         <div>
           <div className="eyebrow critical-eyebrow">
-            INFRASTRUCTURE EXPOSURE
+            FIRMS PRIORITY EVENT
           </div>
 
           <h2>
-            CRITICAL AREAS
+            PRIORITY THERMAL
             <br />
             <span>
-              NEAR INFRASTRUCTURE
+              DETECTION
             </span>
           </h2>
 
           <p>
-            High-priority thermal anomalies
-            identified within operational
-            proximity of critical
-            infrastructure.
+            High-priority FIRMS thermal anomaly
+            in the current result set.
           </p>
         </div>
 
@@ -2526,7 +2542,7 @@ function CriticalInfrastructure() {
 
         <div className="critical-metric">
           <span>
-            THERMAL DETECTIONS
+            FILTERED THERMAL EVENTS
           </span>
 
           <strong>
@@ -2578,7 +2594,7 @@ function CriticalInfrastructure() {
 
         <div>
           <div className="eyebrow">
-            WHY THIS AREA IS CRITICAL
+            WHY THIS DETECTION STANDS OUT
           </div>
 
           <p>
@@ -2600,7 +2616,7 @@ function CriticalInfrastructure() {
 ========================================================= */
 
 function Analytics() {
-  const { DETECTIONS } = useLiveData();
+  const { DETECTIONS, FIRMS_METADATA } = useLiveData();
   const [filters, setFilters] = useState({
     region: "ALL REGIONS",
     type: "ALL TYPES",
@@ -2622,6 +2638,19 @@ function Analytics() {
       );
     });
   }, [DETECTIONS, filters]);
+
+  const activeFilterCount = Object.values(filters).filter(
+    (value) => !value.startsWith("ALL")
+  ).length;
+
+  const clearFilters = () => {
+    setFilters({
+      region: "ALL REGIONS",
+      type: "ALL TYPES",
+      risk: "ALL RISKS",
+      source: "ALL SOURCES"
+    });
+  };
 
   const rankings = useMemo(() => {
     const grouped = new Map();
@@ -2651,20 +2680,27 @@ function Analytics() {
     <main className="page analytics-page">
       <section className="analytics-hero reveal">
         <div className="eyebrow">
-          04 / INTELLIGENCE ANALYTICS
+          03 / INTELLIGENCE ANALYTICS
         </div>
 
         <h1>
-          Fire Intelligence
+          FIRMS Classification
           <br />
           <em>Analytics</em>
         </h1>
 
         <p>
-          Understand temporal patterns,
-          classification trends and regional
-          risk across the current India FIRMS snapshot.
+          Explore the seven-day India FIRMS snapshot across industrial fires,
+          gas flares, agricultural burning, mining activity and wildfires.
         </p>
+
+        <div className="analytics-snapshot-meta">
+          <span>INDIA FIRMS SNAPSHOT</span>
+          <i />
+          <span>{FIRMS_METADATA.windowStart} → {FIRMS_METADATA.windowEnd}</span>
+          <i />
+          <span>{FIRMS_METADATA.sources.length} SOURCES</span>
+        </div>
       </section>
 
       <AnalyticsFilters
@@ -2672,7 +2708,21 @@ function Analytics() {
         setValues={setFilters}
       />
 
-      <StatStrip />
+      <div className="analytics-result-bar">
+        <span>
+          {activeFilterCount
+            ? `${activeFilterCount} FILTER${activeFilterCount === 1 ? "" : "S"} ACTIVE`
+            : "SNAPSHOT TOTALS"}
+        </span>
+        <strong>
+          SHOWING {filtered.length} OF {DETECTIONS.length} EVENTS
+        </strong>
+        {activeFilterCount > 0 && (
+          <button onClick={clearFilters}>CLEAR FILTERS</button>
+        )}
+      </div>
+
+      <StatStrip detections={filtered} />
 
       <section className="analytics-main">
         <TrendChart detections={filtered} />
@@ -2683,8 +2733,8 @@ function Analytics() {
       <section className="locations-section">
         <SectionHeading
           eyebrow="REGIONAL RISK"
-          title="Top Affected Locations"
-          description="Areas with the highest concentration of classified thermal observations."
+          title="Top Thermal Contexts"
+          description="Contexts with the highest concentration of FIRMS thermal observations."
         />
 
         <div className="ranking-list">
@@ -2739,7 +2789,7 @@ function Analytics() {
 
       <RiskDistribution detections={filtered} />
 
-      <CriticalInfrastructure />
+      <CriticalInfrastructure detections={filtered} />
     </main>
   );
 }
@@ -2750,8 +2800,7 @@ function Analytics() {
 
 function SearchOverlay({
   onClose,
-  setPage,
-  setSelectedDetection
+  onSelectDetection
 }) {
   const { DETECTIONS } = useLiveData();
   const [query, setQuery] = useState("");
@@ -2772,10 +2821,8 @@ function SearchOverlay({
   }, [query, DETECTIONS]);
 
   const chooseResult = (result) => {
-    setSelectedDetection(result);
-    setPage("Maps");
+    onSelectDetection(result);
     onClose();
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -2791,6 +2838,12 @@ function SearchOverlay({
           <input
             autoFocus
             value={query}
+            aria-label="Search FIRMS detections"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && results[0]) {
+                chooseResult(results[0]);
+              }
+            }}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search facilities, regions, coordinates or events..."
           />
@@ -3419,6 +3472,12 @@ select:focus-visible {
   align-items: center;
   gap: 12px;
   min-width: 220px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
@@ -5010,6 +5069,25 @@ select:focus-visible {
   text-align: left;
 }
 
+.classification-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 0;
+  color: var(--orange);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .08em;
+}
+
+.classification-label small {
+  color: var(--text-faint);
+  font-size: 8px;
+  font-weight: 400;
+  letter-spacing: .12em;
+}
+
 .thermal-risk {
   display: inline-flex;
   align-items: center;
@@ -5457,6 +5535,55 @@ select:focus-visible {
   font-size: 17px;
   line-height: 1.7;
   text-align: left;
+}
+
+.analytics-snapshot-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 25px;
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .1em;
+}
+
+.analytics-snapshot-meta i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+.analytics-result-bar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: -10px max(5vw,30px) 0;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .1em;
+}
+
+.analytics-result-bar strong {
+  color: var(--orange);
+  font-weight: 600;
+}
+
+.analytics-result-bar button {
+  margin-left: auto;
+  padding: 6px 9px;
+  border: 1px solid var(--control-border);
+  background: transparent;
+  color: var(--orange);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .08em;
 }
 
 .analytics-filters {
@@ -6570,7 +6697,7 @@ select:focus-visible {
     display: block;
     position: fixed;
     z-index: 50;
-    top: 68px;
+    top: 64px;
     left: 15px;
     padding: 10px 12px;
     color: var(--orange);
@@ -6746,11 +6873,31 @@ select:focus-visible {
   }
 
   .nav-links {
-    gap: 9px;
+    position: static;
+    transform: none;
+    gap: 7px;
+    margin-left: auto;
+  }
+
+  .brand {
+    min-width: 90px;
+  }
+
+  .brand-subtitle {
+    display: none;
   }
 
   .nav-link {
-    font-size: 10px;
+    font-size: 9px;
+  }
+
+  .nav-right {
+    gap: 4px;
+  }
+
+  .icon-button {
+    width: 30px;
+    height: 30px;
   }
 
   .nav-link::after {
@@ -6925,6 +7072,15 @@ html[data-theme="light"] .primary-action {
 html[data-theme="light"] .primary-action span,
 html[data-theme="light"] .view-all,
 html[data-theme="light"] .count-label {
+  color: var(--orange);
+}
+
+html[data-theme="light"] .analytics-snapshot-meta,
+html[data-theme="light"] .analytics-result-bar {
+  color: var(--text-faint);
+}
+
+html[data-theme="light"] .analytics-result-bar strong {
   color: var(--orange);
 }
 
@@ -7118,6 +7274,27 @@ html[data-theme="light"] .leaflet-control-attribution a {
   color: #1F5E91 !important;
 }
 
+html[data-theme="light"] .gas-heading span {
+  color: var(--green);
+}
+
+html[data-theme="light"] .thermal-map-wrap,
+html[data-theme="light"] .thermal-map-stage,
+html[data-theme="light"] .thermal-map-wrap .leaflet-container {
+  background: var(--panel-soft);
+  border-color: var(--control-border);
+}
+
+html[data-theme="light"] .thermal-map-head,
+html[data-theme="light"] .thermal-map-coords {
+  background: rgba(255,255,255,.9);
+  color: var(--text-soft);
+}
+
+html[data-theme="light"] .thermal-satellite .leaflet-tile {
+  filter: saturate(.9) contrast(.95) brightness(1.05);
+}
+
 html[data-theme="light"] .map-popup-panel h2,
 html[data-theme="light"] .thermal-popup-head h2,
 html[data-theme="light"] .popup-close,
@@ -7259,10 +7436,7 @@ html[data-theme="dark"] .app-logo {
               onClose={() =>
                 setSearchOpen(false)
               }
-              setPage={navigate}
-              setSelectedDetection={
-                setSelectedDetection
-              }
+              onSelectDetection={goToMapWithDetection}
             />
           )}
 

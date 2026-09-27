@@ -93,6 +93,16 @@
   }
 }
 
+html[data-theme="light"] .earth-live-tag {
+  background: rgba(255,255,255,.88);
+  border-color: rgba(17,24,32,.12);
+  color: #52616E;
+}
+
+html[data-theme="light"] .earth-fallback-label {
+  color: #52616E;
+}
+
 @media (max-width: 600px) {
   .satellite-earth-container {
     height: 320px;
