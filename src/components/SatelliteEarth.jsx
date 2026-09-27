@@ -432,19 +432,23 @@ function buildProceduralSatellite() {
     wing.add(frameBottom);
 
     // Solar cell surfaces (front & back of the panel)
+    // The honeycomb slab is only 0.02 wide on X, so its large faces look along
+    // X. The cell planes must therefore span the full 0.94 depth on Z and be
+    // offset on X; placing them on Z instead leaves the near-black honeycomb
+    // exposed as a black rectangle over the globe.
     const cellSurface = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.03, 0.72),
+      new THREE.PlaneGeometry(0.94, 0.72),
       solarWingMat
     );
-    cellSurface.position.set(0.19 + 0.42 + 0.36 + 0.47, panelY, 0.475);
+    cellSurface.position.set(0.19 + 0.42 + 0.36 + 0.47 + 0.012, panelY, 0);
     cellSurface.rotation.y = Math.PI / 2;
     wing.add(cellSurface);
 
     const cellBack = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.03, 0.72),
+      new THREE.PlaneGeometry(0.94, 0.72),
       solarWingMat
     );
-    cellBack.position.set(0.19 + 0.42 + 0.36 + 0.47, panelY, -0.475);
+    cellBack.position.set(0.19 + 0.42 + 0.36 + 0.47 - 0.012, panelY, 0);
     cellBack.rotation.y = Math.PI / 2;
     wing.add(cellBack);
 
@@ -863,7 +867,7 @@ export default function SatelliteEarth() {
             const box = new THREE.Box3().setFromObject(satelliteGroup);
             const size = box.getSize(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z);
-            const targetSize = 0.6;
+            const targetSize = 1.5;
             const scaleFactor = targetSize / maxDim;
             satelliteGroup.scale.setScalar(scaleFactor);
 
@@ -884,7 +888,7 @@ export default function SatelliteEarth() {
           (error) => {
             if (isDisposed) return;
             satelliteGroup = buildProceduralSatellite();
-            satelliteGroup.scale.set(0.85, 0.85, 0.85);
+            satelliteGroup.scale.set(0.58, 0.58, 0.58);
             satelliteDisposables = satelliteGroup.userData.disposables || [];
             positionSatellite(satelliteGroup);
             scene.add(satelliteGroup);
@@ -893,7 +897,7 @@ export default function SatelliteEarth() {
       } catch (e) {
         if (isDisposed) return;
         satelliteGroup = buildProceduralSatellite();
-        satelliteGroup.scale.set(0.85, 0.85, 0.85);
+        satelliteGroup.scale.set(0.58, 0.58, 0.58);
         satelliteDisposables = satelliteGroup.userData.disposables || [];
         positionSatellite(satelliteGroup);
         scene.add(satelliteGroup);

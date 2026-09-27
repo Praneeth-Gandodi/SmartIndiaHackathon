@@ -3510,7 +3510,7 @@ select:focus-visible {
   margin-top: -2px;
   color: var(--muted);
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .15em;
 }
 
@@ -3598,7 +3598,7 @@ select:focus-visible {
   margin-top: 4px;
   color: var(--muted);
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .icon-button {
@@ -3664,7 +3664,7 @@ select:focus-visible {
   border-radius: 50%;
   color: #AAB3BD;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   background: transparent;
 }
 
@@ -3717,14 +3717,14 @@ select:focus-visible {
   margin-top: 3px;
   color: #68747F;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .profile-status {
   padding: 14px 0;
   color: var(--green);
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -3753,13 +3753,13 @@ select:focus-visible {
 .profile-info span {
   color: #65717D;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .profile-info strong {
   color: #AEB6BE;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 400;
   text-align: right;
 }
@@ -3775,7 +3775,7 @@ select:focus-visible {
   color: #AAB3BD;
   cursor: pointer;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   text-align: left;
   transition: color .2s ease;
 }
@@ -3792,7 +3792,7 @@ select:focus-visible {
   padding-top: 16px;
   color: #505B66;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: 9px;
   letter-spacing: .08em;
 }
 
@@ -3868,8 +3868,8 @@ select:focus-visible {
 }
 
 .hero {
-  min-height: calc(100vh - 68px);
-  padding: 110px max(7vw,50px) 90px;
+  min-height: clamp(600px, 76vh, 800px);
+  padding: 96px max(7vw,50px) 80px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -4005,7 +4005,7 @@ select:focus-visible {
   margin-top: 60px;
   color: #58636E;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .1em;
 }
 
@@ -4047,7 +4047,7 @@ select:focus-visible {
   margin-top: 13px;
   color: #7E8995;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .1em;
   text-align: center;
 }
@@ -4066,7 +4066,7 @@ select:focus-visible {
 ========================================================= */
 
 .detections-section {
-  padding: 110px max(5vw,30px);
+  padding: 84px max(5vw,30px);
   border-top: 1px solid var(--line);
 }
 
@@ -4143,7 +4143,7 @@ select:focus-visible {
   display: block;
   color: #67737F;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .12em;
 }
 
@@ -4163,7 +4163,7 @@ select:focus-visible {
   color: var(--orange);
   cursor: pointer;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .08em;
   transition:
     background .2s ease,
@@ -4215,7 +4215,7 @@ select:focus-visible {
   margin-top: 5px;
   color: #67737F;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .12em;
 }
 
@@ -4224,7 +4224,7 @@ select:focus-visible {
   align-items: center;
   gap: 8px;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .05em;
 }
 
@@ -4239,7 +4239,7 @@ select:focus-visible {
 .row-coordinate {
   color: #7C8792;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   line-height: 1.6;
   text-align: left;
 }
@@ -4263,7 +4263,7 @@ select:focus-visible {
   color: var(--orange);
   cursor: pointer;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .08em;
 }
 
@@ -4276,7 +4276,7 @@ select:focus-visible {
 ========================================================= */
 
 .category-section {
-  padding: 100px max(5vw,30px);
+  padding: 78px max(5vw,30px);
   border-top: 1px solid var(--line);
 }
 
@@ -4358,7 +4358,7 @@ select:focus-visible {
 }
 
 .filter-group {
-  padding: 22px 0;
+  padding: 30px 0;
   border-top: 1px solid var(--line);
 }
 
@@ -4367,7 +4367,7 @@ select:focus-visible {
   margin-bottom: 14px;
   color: #788491;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .12em;
 }
 
@@ -4387,7 +4387,7 @@ select:focus-visible {
 .date-field small {
   color: #596570;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: 9px;
 }
 
 .date-row input {
@@ -4399,7 +4399,7 @@ select:focus-visible {
   outline: none;
   color-scheme: dark;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .date-row input:hover,
@@ -4537,7 +4537,7 @@ select:focus-visible {
 .showing small {
   color: #65717D;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .1em;
 }
 
@@ -4595,7 +4595,7 @@ select:focus-visible {
   margin: 5px 0 0;
   color: #84909B;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .map-overlay-controls {
@@ -4639,7 +4639,7 @@ select:focus-visible {
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255,255,255,.09);
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .map-legend span {
@@ -4666,7 +4666,7 @@ select:focus-visible {
   backdrop-filter: blur(12px);
   color: #75818C;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   white-space: nowrap;
 }
 
@@ -4679,13 +4679,21 @@ select:focus-visible {
   position: absolute;
   z-index: 10;
   right: 30px;
-  bottom: 28px;
+  bottom: 46px;
   display: flex;
   gap: 15px;
-  color: #74808B;
+  padding: 7px 11px;
+  background: rgba(5,7,10,.55);
+  color: #9AA5B1;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
+  letter-spacing: .06em;
   pointer-events: none;
+}
+
+html[data-theme="light"] .map-coordinates {
+  background: rgba(255,255,255,.82);
+  color: var(--text-muted);
 }
 
 .satellite-indicator {
@@ -4699,7 +4707,7 @@ select:focus-visible {
   border: 1px solid rgba(255,255,255,.09);
   backdrop-filter: blur(10px);
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .satellite-indicator.on {
@@ -4728,7 +4736,7 @@ select:focus-visible {
   background: rgba(5,7,10,.86);
   color: var(--marker);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   box-shadow: 0 0 12px var(--marker);
   transition: transform .2s ease;
 }
@@ -4854,7 +4862,7 @@ select:focus-visible {
   border-radius: 0 !important;
   box-shadow: none !important;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   padding: 0 !important;
 }
 
@@ -4883,7 +4891,7 @@ select:focus-visible {
 
 .fw-tt-head span {
   color: #8C9BA8;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .1em;
 }
 
@@ -4915,15 +4923,64 @@ select:focus-visible {
   border-top-color: rgba(255,255,255,.12) !important;
 }
 
+.leaflet-bar {
+  border: 1px solid rgba(255,255,255,.14) !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,.34);
+  overflow: hidden;
+}
+
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  width: 34px !important;
+  height: 34px !important;
+  line-height: 34px !important;
+  background: rgba(5,7,10,.72);
+  backdrop-filter: blur(10px);
+  color: #C3CCD6;
+  border-bottom-color: rgba(255,255,255,.12) !important;
+  font-size: 18px;
+}
+
+.leaflet-bar a:hover {
+  background: rgba(5,7,10,.88);
+  color: #FFFFFF;
+}
+
+html[data-theme="light"] .leaflet-bar {
+  border-color: var(--control-border) !important;
+  box-shadow: 0 10px 26px rgba(17,24,32,.16);
+}
+
+html[data-theme="light"] .leaflet-bar a,
+html[data-theme="light"] .leaflet-bar a:hover {
+  background: rgba(255,255,255,.9);
+  color: var(--text-soft);
+  border-bottom-color: var(--control-border) !important;
+}
+
+html[data-theme="light"] .leaflet-bar a:hover {
+  background: #FFFFFF;
+  color: var(--text);
+}
+
 .leaflet-control-attribution {
   background: rgba(5,7,10,.6) !important;
-  color: #65717D !important;
+  color: #8D99A5 !important;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: 9px;
+}
+
+html[data-theme="light"] .leaflet-control-attribution {
+  background: rgba(255,255,255,.82) !important;
+  color: var(--text-muted) !important;
 }
 
 .leaflet-control-attribution a {
   color: #8D99A5 !important;
+}
+
+html[data-theme="light"] .leaflet-control-attribution a {
+  color: var(--text-faint) !important;
 }
 
 /* =========================================================
@@ -4986,7 +5043,7 @@ select:focus-visible {
   padding: 7px 10px;
   border: 1px solid;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .popup-risk span {
@@ -5011,7 +5068,7 @@ select:focus-visible {
 .popup-description small {
   color: #66727E;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .1em;
 }
 
@@ -5083,7 +5140,7 @@ select:focus-visible {
 
 .classification-label small {
   color: var(--text-faint);
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 400;
   letter-spacing: .12em;
 }
@@ -5095,7 +5152,7 @@ select:focus-visible {
   padding: 7px 10px;
   border: 1px solid;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .thermal-risk i {
@@ -5145,7 +5202,7 @@ select:focus-visible {
 .ten-day-head span {
   color: #66727E;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .1em;
 }
 
@@ -5186,7 +5243,7 @@ select:focus-visible {
 .ten-day-col span {
   color: #5A6570;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: 9px;
 }
 
 .ten-day-stats {
@@ -5206,7 +5263,7 @@ select:focus-visible {
 .ten-day-stats small {
   color: #66727E;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: 9px;
   letter-spacing: .1em;
 }
 
@@ -5226,7 +5283,7 @@ select:focus-visible {
   margin-bottom: 10px;
   color: #66727E;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .1em;
 }
 
@@ -5248,7 +5305,7 @@ select:focus-visible {
 .gasval-row span {
   color: #8C9BA8;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .gasval-row b {
@@ -5260,7 +5317,7 @@ select:focus-visible {
 .gasval-row b small {
   margin-left: 2px;
   color: #66727E;
-  font-size: 7px;
+  font-size: 9px;
   font-weight: 500;
 }
 
@@ -5358,7 +5415,7 @@ select:focus-visible {
   background: rgba(4,7,13,.62);
   color: #9FADBA;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .14em;
 }
 
@@ -5371,7 +5428,7 @@ select:focus-visible {
   background: rgba(4,7,13,.62);
   color: #C6CDD4;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .thermal-map-footer {
@@ -5387,7 +5444,7 @@ select:focus-visible {
 .thermal-map-footer span {
   color: #66727E;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .thermal-scale {
@@ -5455,14 +5512,14 @@ select:focus-visible {
 
 .gas-heading span {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   color: #66D9A0;
 }
 
 .gas-heading small {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   color: var(--orange, #FF5A1F);
 }
 
@@ -5490,7 +5547,7 @@ select:focus-visible {
   padding: 0 0 8px;
   border-top: 0;
   color: #596570;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 1px;
 }
 
@@ -5544,7 +5601,7 @@ select:focus-visible {
   margin-top: 25px;
   color: var(--text-faint);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .1em;
 }
 
@@ -5565,7 +5622,7 @@ select:focus-visible {
   border-bottom: 1px solid var(--line);
   color: var(--text-faint);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .1em;
 }
 
@@ -5582,7 +5639,7 @@ select:focus-visible {
   color: var(--orange);
   cursor: pointer;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .08em;
 }
 
@@ -5600,9 +5657,9 @@ select:focus-visible {
 }
 
 .analytics-filters label span {
-  color: #68737F;
+  color: var(--muted);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .1em;
 }
 
@@ -5647,7 +5704,7 @@ select:focus-visible {
 .chart-range {
   color: #66727D;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .chart-body {
@@ -5711,7 +5768,7 @@ select:focus-visible {
   justify-content: space-between;
   color: #596570;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .chart-tooltip {
@@ -5733,7 +5790,7 @@ select:focus-visible {
 .chart-tooltip span {
   color: #697581;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: 9px;
 }
 
 .classification {
@@ -5752,7 +5809,7 @@ select:focus-visible {
   display: flex;
   justify-content: space-between;
   margin-bottom: 10px;
-  color: #A8B0B8;
+  color: var(--muted);
   font-size: 13px;
 }
 
@@ -5763,13 +5820,14 @@ select:focus-visible {
 }
 
 .bar {
-  height: 3px;
+  height: 7px;
   background: rgba(255,255,255,.08);
 }
 
 .bar span {
   display: block;
   height: 100%;
+  min-width: 6px;
   animation: growBar 1.3s ease forwards;
   transform-origin: left;
 }
@@ -5789,8 +5847,8 @@ select:focus-visible {
 ========================================================= */
 
 .locations-section {
-  margin: 130px max(5vw,30px) 0;
-  padding-top: 80px;
+  margin: 120px max(5vw,30px) 0;
+  padding: 56px 0 0;
   border-top: 1px solid var(--line);
 }
 
@@ -5823,12 +5881,12 @@ select:focus-visible {
 .ranking-row > span:not(.rank-number) {
   color: #7E8994;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .ranking-row b {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 500;
   text-align: right;
 }
@@ -5839,7 +5897,7 @@ select:focus-visible {
 
 .risk-distribution {
   margin: 120px max(5vw,30px);
-  padding: 75px 0;
+  padding: 56px 0;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   text-align: left;
@@ -5871,7 +5929,7 @@ select:focus-visible {
 
 .risk-bar-label span {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .risk-bar-label strong {
@@ -5896,7 +5954,7 @@ select:focus-visible {
 
 .critical-infrastructure {
   margin: 120px max(5vw,30px) 0;
-  padding: 75px 0 0;
+  padding: 56px 0 0;
   border-top: 1px solid rgba(255,48,64,.35);
   text-align: left;
 }
@@ -5943,7 +6001,7 @@ select:focus-visible {
   border: 1px solid rgba(255,48,64,.35);
   color: var(--red);
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .1em;
 }
 
@@ -5974,7 +6032,7 @@ select:focus-visible {
 .critical-event-type {
   color: var(--red);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .12em;
 }
 
@@ -5989,7 +6047,7 @@ select:focus-visible {
 .critical-location {
   color: #697581;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .critical-event-risk {
@@ -6004,7 +6062,7 @@ select:focus-visible {
 .critical-event-risk small {
   color: #68747F;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .1em;
 }
 
@@ -6035,7 +6093,7 @@ select:focus-visible {
 .critical-metric > span {
   color: #66727D;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .1em;
 }
 
@@ -6132,7 +6190,7 @@ select:focus-visible {
   justify-content: space-between;
   color: #68737F;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .12em;
 }
 
@@ -6142,7 +6200,7 @@ select:focus-visible {
   color: #89949F;
   cursor: pointer;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .search-input-wrap {
@@ -6181,7 +6239,7 @@ select:focus-visible {
   color: #66727D;
   cursor: pointer;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .search-clear:hover {
@@ -6192,7 +6250,7 @@ select:focus-visible {
   margin-top: 13px;
   color: #596570;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .08em;
 }
 
@@ -6223,7 +6281,7 @@ select:focus-visible {
 .search-results > button > span {
   color: #56616C;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .search-results strong {
@@ -6237,7 +6295,7 @@ select:focus-visible {
   margin-top: 4px;
   color: #74808B;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .search-coord {
@@ -6302,7 +6360,7 @@ select:focus-visible {
 .notification-header span {
   color: #697580;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .1em;
 }
 
@@ -6310,13 +6368,13 @@ select:focus-visible {
   margin-top: 4px;
   color: #48535E;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: 9px;
 }
 
 .notification-header b {
   color: var(--orange);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 400;
 }
 
@@ -6340,7 +6398,7 @@ select:focus-visible {
 
 .notification-severity {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .08em;
 }
 
@@ -6366,7 +6424,7 @@ select:focus-visible {
   margin-top: 4px;
   color: #6D7883;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .notification-arrow {
@@ -6382,7 +6440,7 @@ select:focus-visible {
   justify-content: space-between;
   color: var(--orange);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .08em;
 }
 
@@ -6705,7 +6763,7 @@ select:focus-visible {
     border: 1px solid rgba(255,255,255,.12);
     backdrop-filter: blur(10px);
     font-family: var(--mono);
-    font-size: 8px;
+    font-size: 10px;
   }
 
   .close-mobile-filter {
@@ -6888,7 +6946,7 @@ select:focus-visible {
   }
 
   .nav-link {
-    font-size: 9px;
+    font-size: 11px;
   }
 
   .nav-right {
@@ -6974,8 +7032,8 @@ html[data-theme="light"] {
   --bg2: #FFFFFF;
   --text: #111820;
   --text-soft: #27333E;
-  --text-muted: #52616E;
-  --text-faint: #64717D;
+  --text-muted: #4A5866;
+  --text-faint: #5A6672;
   --muted: #4E5D69;
   --panel: #FFFFFF;
   --panel-soft: #EDF1F4;
@@ -7084,13 +7142,8 @@ html[data-theme="light"] .analytics-result-bar strong {
   color: var(--orange);
 }
 
-html[data-theme="light"] .stat-strip,
 html[data-theme="light"] .category-section,
-html[data-theme="light"] .critical-infrastructure,
-html[data-theme="light"] .analytics-main,
-html[data-theme="light"] .locations-section,
-html[data-theme="light"] .risk-distribution {
-  background: var(--bg2);
+html[data-theme="light"] .stat-strip {
   border-color: var(--line);
 }
 
@@ -7106,8 +7159,6 @@ html[data-theme="light"] .search-results > button {
   border-color: var(--line);
 }
 
-html[data-theme="light"] .detection-row,
-html[data-theme="light"] .mini-detection-list,
 html[data-theme="light"] .analytics-filters,
 html[data-theme="light"] .profile-panel,
 html[data-theme="light"] .notification-panel,
@@ -7115,6 +7166,17 @@ html[data-theme="light"] .search-overlay {
   background: var(--panel);
   border-color: var(--control-border);
   box-shadow: 0 18px 55px rgba(17,24,32,.14);
+}
+
+/* Detection lists stay flat hairline-separated rows, matching the dark theme.
+   Giving the rows or their wrapper a panel background + shadow stacks them
+   into one white slab with the text hard against the edges. */
+html[data-theme="light"] .detection-list,
+html[data-theme="light"] .mini-detection-list,
+html[data-theme="light"] .detection-row {
+  background: transparent;
+  box-shadow: none;
+  border-color: var(--line);
 }
 
 html[data-theme="light"] .detection-row.expanded,
