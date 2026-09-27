@@ -5645,9 +5645,12 @@ html[data-theme="light"] .leaflet-control-attribution a {
 
 .analytics-filters {
   display: grid;
-  grid-template-columns: repeat(4,1fr);
+  /* minmax(0,1fr) so a long <select> option can never force a track wider
+     than the container and push the last field past the card edge. */
+  grid-template-columns: repeat(4,minmax(0,1fr));
   gap: 20px;
   margin: 35px max(5vw,30px);
+  padding: 22px 24px;
 }
 
 .analytics-filters label {
@@ -5664,6 +5667,8 @@ html[data-theme="light"] .leaflet-control-attribution a {
 }
 
 .analytics-filters select {
+  width: 100%;
+  min-width: 0;
   padding: 11px 10px;
   background: rgba(255,255,255,.015);
   color: #B8C0C8;
@@ -6824,8 +6829,9 @@ html[data-theme="light"] .leaflet-control-attribution a {
   }
 
   .analytics-filters {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2,minmax(0,1fr));
     margin: 25px 20px;
+    padding: 18px 20px;
   }
 
   .analytics-main {
@@ -6981,7 +6987,8 @@ html[data-theme="light"] .leaflet-control-attribution a {
   }
 
   .analytics-filters {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0,1fr);
+    padding: 16px;
   }
 
   .analytics-hero h1 {
