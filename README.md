@@ -210,6 +210,28 @@ public/
   index.html                     HTML shell and theme bootstrap
 ```
 
+## Walkthrough
+
+A first-run coach mark explains the controls on whichever page the viewer is
+on, so someone opening the app cold can tell what each button does without you
+narrating it.
+
+- Plays automatically once, then never again.
+- Replay it any time from the question mark button in the navbar.
+- Steps are per page, so a judge can re-watch just the map.
+- `SKIP` and `Esc` both dismiss it; arrow keys move between steps.
+- Styled with the existing design tokens, so it matches the active theme.
+
+For a demo you can force it to play again regardless of the stored flag:
+
+```text
+http://localhost:3000/?walkthrough=1     play the walkthrough now
+http://localhost:3000/?walkthrough=reset clear the flag and play it
+```
+
+The "seen" flag lives in `localStorage` under `agni-drishti-walkthrough-seen`,
+and is only written when the walkthrough is finished or skipped.
+
 ## Demo workflow
 
 1. Start the development server with `npm start`.
@@ -217,5 +239,5 @@ public/
 3. Explore the FIRMS dashboard and detection stream.
 4. Open **Maps** to inspect the India FIRMS snapshot.
 5. Open **Analytics** to use the working filters.
-6. Open **Alerts** to view the priority-alert concept.
-7. Use the theme button in the navbar to switch between dark and light mode.
+6. Use the theme button in the navbar to switch between dark and light mode.
+7. Press the question mark in the navbar to replay the walkthrough.

@@ -1,6 +1,7 @@
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState
@@ -248,6 +249,455 @@ function LoadingScreen({ onComplete }) {
    NAVBAR
 ========================================================= */
 
+/* =========================================================
+   WALKTHROUGH
+   A first-run coach mark explaining the controls on whichever page the
+   viewer is on. Plays once, can be skipped, replays from the navbar.
+   Styled only with existing design tokens, so it follows the active
+   theme without carrying theme-specific rules of its own.
+   ========================================================= */
+
+const WALKTHROUGH_SEEN_KEY =
+  "agni-drishti-walkthrough-seen";
+
+/*
+ * Steps are grouped per page. `target` is a CSS selector for the element to
+ * highlight and `placement` decides which side of it the card sits on.
+ * `minWidth` skips a step on narrow viewports, where the target is either
+ * hidden or collapsed behind the mobile filter drawer.
+ */
+const WALKTHROUGH_STEPS = {
+  Dashboard: [
+    {
+      target: ".stat-strip",
+      title: "The snapshot at a glance",
+      body:
+        "101 real NASA FIRMS thermal events observed over India in a seven-day window, split across the five PS 26162 classes. Every count here is computed from the observations, not typed in.",
+      placement: "bottom"
+    },
+    {
+      target: ".detections-section .detection-row-main",
+      title: "One row, one real observation",
+      body:
+        "Each row is a single FIRMS detection. Expand it to see brightness, fire radiative power, the sensor that saw it, and how many observations the cluster holds. Click the name to open it on the map.",
+      placement: "bottom"
+    },
+    {
+      target: ".hero-actions",
+      title: "Two ways in",
+      body:
+        "Jump straight to the map to explore the events geographically, or go to Analytics for the filtered breakdown and charts.",
+      placement: "bottom"
+    },
+    {
+      target: ".category-section",
+      title: "The same events, grouped by class",
+      body:
+        "The detections grouped by industrial fires, gas flares, agricultural burning, mining activity and wildfires. Class labels come from OpenStreetMap land use, so a steel plant reads as industrial rather than forest.",
+      placement: "top"
+    },
+    {
+      target: ".nav-right",
+      title: "Search, theme and walkthrough",
+      body:
+        "Search any detection by site name, class or coordinates. The moon button switches theme. The bell lists recent snapshot activity. The question mark replays this walkthrough whenever you need it.",
+      placement: "bottom",
+      minWidth: 900
+    }
+  ],
+  Maps: [
+    {
+      target: ".filter-rail .filter-group",
+      title: "Filter by fire type",
+      body:
+        "Each checkbox toggles one of the five PS 26162 classes. Untick a class to hide those events from the map. The counters and the map update as you go.",
+      placement: "right",
+      minWidth: 1024
+    },
+    {
+      target: ".filter-rail .filter-group + .filter-group",
+      title: "Filter by risk level",
+      body:
+        "Risk is a demo priority heuristic derived from real FIRMS brightness, fire radiative power and how many times the cluster was observed. It is not a NASA product.",
+      placement: "right",
+      minWidth: 1024
+    },
+    {
+      target: ".map-legend",
+      title: "Read the colour legend",
+      body:
+        "Markers are coloured by risk, and the letter inside each one is the class: I industrial, G gas flare, A agricultural, M mining, W wildfire.",
+      placement: "top"
+    },
+    {
+      target: ".leaflet-marker-icon.fire-marker-wrapper",
+      title: "Click any marker",
+      body:
+        "The popup shows the classified category, the authentic FIRMS values, and a satellite view of that exact spot, so you can check the label against what is actually on the ground.",
+      placement: "left"
+    },
+    {
+      target: ".map-overlay-controls",
+      title: "Basemap and zoom",
+      body:
+        "Switch between satellite imagery and the vector basemap, and use the zoom controls. The strip in the corner gives the snapshot date range and the live event count.",
+      placement: "left"
+    }
+  ],
+  Analytics: [
+    {
+      target: ".analytics-filters",
+      title: "Four ways to filter",
+      body:
+        "Narrow the data by region, fire type, risk level and sensor. Everything below recalculates from whatever you select.",
+      placement: "bottom"
+    },
+    {
+      target: ".analytics-result-bar",
+      title: "How much is on screen",
+      body:
+        "The bar shows how many filters are active and how many of the 101 events match. Clear filters returns everything.",
+      placement: "bottom"
+    },
+    {
+      target: ".analytics-main",
+      title: "The charts",
+      body:
+        "Daily FIRMS counts, the class split, the risk mix, and the highest-priority detection with its supporting numbers. All of it responds to the filters above.",
+      placement: "top"
+    }
+  ]
+};
+
+function readWalkthroughSeen() {
+  try {
+    return (
+      window.localStorage.getItem(
+        WALKTHROUGH_SEEN_KEY
+      ) === "1"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function writeWalkthroughSeen() {
+  try {
+    window.localStorage.setItem(
+      WALKTHROUGH_SEEN_KEY,
+      "1"
+    );
+  } catch {
+    // Persistence is optional in restricted browser contexts.
+  }
+}
+
+function Walkthrough({
+  page,
+  stepIndex,
+  onStepChange,
+  onClose
+}) {
+  const cardRef = useRef(null);
+  const [rect, setRect] = useState(null);
+  const [pos, setPos] = useState(null);
+
+  const steps =
+    WALKTHROUGH_STEPS[page] || [];
+  const step = steps[stepIndex];
+
+  const isNarrow =
+    typeof window !== "undefined" &&
+    window.innerWidth < (step?.minWidth || 0);
+
+  /*
+   * Measure the highlighted element and keep the cut-out tracking it.
+   * Recomputed on scroll and resize so sticky headers and the filter rail
+   * do not leave the highlight pointing at the wrong place.
+   */
+  useEffect(() => {
+    if (!step) return;
+
+    const measure = () => {
+      const element =
+        document.querySelector(
+          step.target
+        );
+      if (!element) {
+        setRect(null);
+        return;
+      }
+      const box =
+        element.getBoundingClientRect();
+      if (box.width === 0 || box.height === 0) {
+        setRect(null);
+        return;
+      }
+      setRect({
+        top: box.top,
+        left: box.left,
+        width: box.width,
+        height: box.height,
+        bottom: box.bottom,
+        right: box.right
+      });
+    };
+
+    measure();
+    window.addEventListener(
+      "resize",
+      measure
+    );
+    window.addEventListener(
+      "scroll",
+      measure,
+      true
+    );
+
+    const settle = setTimeout(measure, 140);
+    return () => {
+      window.removeEventListener(
+        "resize",
+        measure
+      );
+      window.removeEventListener(
+        "scroll",
+        measure,
+        true
+      );
+      clearTimeout(settle);
+    };
+  }, [step, page]);
+
+  /* Escape skips out, arrows move between steps. */
+  useEffect(() => {
+    if (!step) return;
+
+    const handleKey = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose("skip");
+        return;
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        onStepChange(
+          Math.min(stepIndex + 1, steps.length - 1)
+        );
+        return;
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        onStepChange(Math.max(stepIndex - 1, 0));
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () =>
+      window.removeEventListener("keydown", handleKey);
+  }, [step, stepIndex, steps.length, onStepChange, onClose]);
+
+  /*
+   * Place the card against the target, then clamp it so it can never end up
+   * off-screen. Without this a step whose target sits below the fold renders
+   * the card outside the viewport with no way to read it.
+   */
+  useLayoutEffect(() => {
+    if (!rect || !cardRef.current || isNarrow) {
+      setPos(null);
+      return;
+    }
+
+    const place = () => {
+      const card = cardRef.current;
+      if (!card) return;
+
+      const cardWidth = card.offsetWidth;
+      const cardHeight = card.offsetHeight;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const gap = 18;
+      const margin = 16;
+      // Keep clear of the sticky navbar.
+      const minTop = 84;
+
+      const placement =
+        step.placement || "bottom";
+      let top;
+      let left;
+
+      if (placement === "top") {
+        top = rect.top - cardHeight - gap;
+      } else if (
+        placement === "left" ||
+        placement === "right"
+      ) {
+        top =
+          rect.top + rect.height / 2 - cardHeight / 2;
+      } else {
+        top = rect.bottom + gap;
+      }
+
+      if (placement === "left") {
+        left = rect.left + rect.width + gap;
+      } else if (placement === "right") {
+        left = rect.left - cardWidth - gap;
+      } else {
+        left = rect.left;
+      }
+
+      top = Math.min(
+        Math.max(top, minTop),
+        Math.max(minTop, viewportHeight - cardHeight - margin)
+      );
+      left = Math.min(
+        Math.max(left, margin),
+        Math.max(
+          margin,
+          viewportWidth - cardWidth - margin
+        )
+      );
+
+      // Guard so a bad measurement can never silently drop the inline style.
+      if (
+        !Number.isFinite(top) ||
+        !Number.isFinite(left)
+      ) {
+        setPos(null);
+        return;
+      }
+
+      setPos({ top, left });
+    };
+
+    place();
+    window.addEventListener("resize", place);
+    return () =>
+      window.removeEventListener("resize", place);
+  }, [rect, step, isNarrow, page]);
+
+  /* Pull focus into the card so the dialog is keyboard reachable. */
+  useEffect(() => {
+    if (cardRef.current) {
+      cardRef.current.focus();
+    }
+  }, [stepIndex, page]);
+
+  if (!step) return null;
+
+  const total = steps.length;
+  const isLast = stepIndex === total - 1;
+
+  return (
+    <div
+      className="walkthrough"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="walkthrough-title"
+    >
+      <div
+        className="walkthrough-scrim"
+        onClick={() => onClose("skip")}
+      />
+
+      {rect && (
+        <div
+          className="walkthrough-spotlight"
+          style={{
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height
+          }}
+          aria-hidden="true"
+        />
+      )}
+
+      <div
+        className={
+          isNarrow
+            ? "walkthrough-card walkthrough-card-centered"
+            : "walkthrough-card"
+        }
+        ref={cardRef}
+        tabIndex={-1}
+        style={
+          pos ? { top: pos.top, left: pos.left } : undefined
+        }
+      >
+        <div className="walkthrough-head">
+          <span className="walkthrough-count">
+            {String(stepIndex + 1).padStart(2, "0")}
+            {" / "}
+            {String(total).padStart(2, "0")}
+          </span>
+
+          <button
+            type="button"
+            className="walkthrough-skip"
+            onClick={() => onClose("skip")}
+          >
+            SKIP
+          </button>
+        </div>
+
+        <h2
+          className="walkthrough-title"
+          id="walkthrough-title"
+        >
+          {step.title}
+        </h2>
+
+        <p className="walkthrough-body">{step.body}</p>
+
+        <div className="walkthrough-dots">
+          {Array.from({ length: total }).map((_, index) => (
+            <i
+              key={index}
+              className={index === stepIndex ? "active" : ""}
+            />
+          ))}
+        </div>
+
+        <div className="walkthrough-foot">
+          <button
+            type="button"
+            className="walkthrough-back"
+            onClick={() =>
+              onStepChange(Math.max(stepIndex - 1, 0))
+            }
+            disabled={stepIndex === 0}
+          >
+            BACK
+          </button>
+
+          <button
+            type="button"
+            className="walkthrough-next"
+            onClick={() => {
+              if (isLast) {
+                onClose("finish");
+                return;
+              }
+              onStepChange(stepIndex + 1);
+            }}
+          >
+            {isLast ? "FINISH" : "NEXT"}
+          </button>
+        </div>
+      </div>
+
+      <span className="walkthrough-live" role="status">
+        {`Step ${stepIndex + 1} of ${total}: ${step.title}`}
+      </span>
+    </div>
+  );
+}
+
+/* =========================================================
+   NAVBAR
+   ========================================================= */
+
 function NavIcon({ name }) {
   if (name === "search") {
     return (
@@ -263,6 +713,16 @@ function NavIcon({ name }) {
       <svg className="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
         <path d="M10 21h4" />
+      </svg>
+    );
+  }
+
+  if (name === "help") {
+    return (
+      <svg className="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.5" />
+        <path d="M9.2 9.2a2.9 2.9 0 1 1 3.9 2.7c-.7.3-1.1 1-1.1 1.8v.4" />
+        <path d="M12 17.2h.01" />
       </svg>
     );
   }
@@ -290,7 +750,8 @@ function Navbar({
   onNotifications,
   notificationOpen,
   theme,
-  onToggleTheme
+  onToggleTheme,
+  onWalkthrough
 }) {
   const navigate = (next) => {
     setPage(next);
@@ -359,6 +820,15 @@ function Navbar({
             title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
           >
             <NavIcon name={theme === "dark" ? "sun" : "moon"} />
+          </button>
+
+          <button
+            className="icon-button"
+            onClick={onWalkthrough}
+            aria-label="Replay walkthrough"
+            title="Walkthrough"
+          >
+            <NavIcon name="help" />
           </button>
 
           <button
@@ -3027,6 +3497,85 @@ function App() {
     selectedDetection,
     setSelectedDetection
   ] = useState(null);
+
+  const [
+    walkthroughOpen,
+    setWalkthroughOpen
+  ] = useState(false);
+
+  const [
+    walkthroughStep,
+    setWalkthroughStep
+  ] = useState(0);
+
+  /*
+   * First run only. `?walkthrough=1` forces it to play again and
+   * `?walkthrough=reset` clears the stored flag, which matters when several
+   * people share one machine during a demo.
+   */
+  useEffect(() => {
+    if (loading) return;
+
+    let forced = false;
+    try {
+      const flag =
+        new URLSearchParams(
+          window.location.search
+        ).get("walkthrough");
+      if (flag === "reset") {
+        window.localStorage.removeItem(
+          WALKTHROUGH_SEEN_KEY
+        );
+      }
+      forced = flag === "1" || flag === "reset";
+    } catch {
+      // Query parsing is optional; fall back to the stored flag.
+    }
+
+    if (forced) {
+      const start = setTimeout(
+        () => {
+          setWalkthroughStep(0);
+          setWalkthroughOpen(true);
+        },
+        600
+      );
+      return () => clearTimeout(start);
+    }
+
+    if (readWalkthroughSeen()) return;
+
+    const start = setTimeout(
+      () => {
+        setWalkthroughStep(0);
+        setWalkthroughOpen(true);
+      },
+      600
+    );
+    return () => clearTimeout(start);
+  }, [loading]);
+
+  /* Starting on a different page restarts that page's steps. */
+  useEffect(() => {
+    if (walkthroughOpen) {
+      setWalkthroughStep(0);
+    }
+  }, [page, walkthroughOpen]);
+
+  const startWalkthrough = useCallback(() => {
+    setWalkthroughStep(0);
+    setWalkthroughOpen(true);
+  }, []);
+
+  /*
+   * The seen flag is written on finish or skip, never on open, so a refresh
+   * part-way through does not silently mark the tour as watched.
+   */
+  const closeWalkthrough = useCallback(() => {
+    setWalkthroughOpen(false);
+    setWalkthroughStep(0);
+    writeWalkthroughSeen();
+  }, []);
 
   useEffect(() => {
     applyTheme(theme);
@@ -7427,6 +7976,234 @@ html[data-theme="light"] .loading-status {
   color: var(--text-soft);
 }
 
+/* =========================================================
+   WALKTHROUGH
+   Built entirely from the design tokens, so the light and dark
+   themes are both covered without any theme-specific overrides.
+   ========================================================= */
+
+.walkthrough {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+}
+
+/*
+ * The scrim only swallows clicks. The dimming and the cut-out both come from
+ * the spotlight's oversized box-shadow, so the page is never darkened twice.
+ */
+.walkthrough-scrim {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  animation: walkthroughFade .22s ease both;
+}
+
+.walkthrough-spotlight {
+  position: absolute;
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 2px var(--orange),
+    0 0 0 9999px rgba(3, 5, 8, .72);
+  pointer-events: none;
+  transition:
+    top .26s cubic-bezier(.22, 1, .36, 1),
+    left .26s cubic-bezier(.22, 1, .36, 1),
+    width .26s cubic-bezier(.22, 1, .36, 1),
+    height .26s cubic-bezier(.22, 1, .36, 1);
+}
+
+.walkthrough-card {
+  position: fixed;
+  z-index: 2;
+  /* Fallback until the measured position is applied, so the card never
+     flashes on top of the sticky navbar. */
+  top: 84px;
+  left: 24px;
+  width: 340px;
+  max-height: 72vh;
+  overflow-y: auto;
+  padding: 20px 20px 16px;
+  background: var(--panel);
+  border: 1px solid var(--control-border);
+  border-top: 2px solid var(--orange);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, .55);
+  outline: none;
+  animation: walkthroughFade .2s ease both;
+}
+
+.walkthrough-card-centered {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: min(400px, calc(100vw - 40px));
+}
+
+.walkthrough-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.walkthrough-count {
+  color: var(--orange);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+}
+
+.walkthrough-skip {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--control-border);
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  cursor: pointer;
+  transition: color .2s ease, border-color .2s ease;
+}
+
+.walkthrough-skip:hover {
+  color: var(--orange);
+  border-color: var(--orange);
+}
+
+.walkthrough-title {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -.02em;
+  text-align: left;
+}
+
+.walkthrough-body {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  line-height: 1.65;
+  text-align: left;
+}
+
+.walkthrough-dots {
+  display: flex;
+  gap: 5px;
+  margin: 16px 0 14px;
+}
+
+.walkthrough-dots i {
+  width: 14px;
+  height: 2px;
+  background: var(--line);
+  transition: background-color .2s ease;
+}
+
+.walkthrough-dots i.active {
+  background: var(--orange);
+}
+
+.walkthrough-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.walkthrough-back,
+.walkthrough-next {
+  padding: 9px 14px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  cursor: pointer;
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease, opacity .2s ease;
+}
+
+.walkthrough-back {
+  background: transparent;
+  border: 1px solid var(--control-border);
+  color: var(--text-muted);
+}
+
+.walkthrough-back:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--text-faint);
+}
+
+.walkthrough-back:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+.walkthrough-next {
+  background: var(--orange);
+  border: 1px solid var(--orange);
+  color: #fff;
+}
+
+.walkthrough-next:hover {
+  background: #ff6f3c;
+  border-color: #ff6f3c;
+}
+
+.walkthrough-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.walkthrough-card :focus-visible,
+.walkthrough-spotlight {
+  outline: none;
+}
+
+.walkthrough button:focus-visible {
+  outline: 1px solid var(--orange);
+  outline-offset: 2px;
+}
+
+/* Light theme needs a lighter scrim and a visible lift off white cards. */
+html[data-theme="light"] .walkthrough-card {
+  box-shadow: 0 24px 60px rgba(17, 24, 32, .22);
+}
+
+html[data-theme="light"] .walkthrough-spotlight {
+  box-shadow:
+    0 0 0 2px var(--orange),
+    0 0 0 9999px rgba(17, 24, 32, .5);
+}
+
+html[data-theme="light"] .walkthrough-dots i {
+  background: rgba(17, 24, 32, .16);
+}
+
+@keyframes walkthroughFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Keep the tour clear of the sticky header and mobile drawer. */
+@media (max-width: 1100px) {
+  .walkthrough-card {
+    width: min(320px, calc(100vw - 40px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .walkthrough-spotlight,
+  .walkthrough-card,
+  .walkthrough-scrim {
+    animation: none;
+    transition: none;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   html[data-theme="light"] .navbar,
   html[data-theme="light"] .profile-panel,
@@ -7469,6 +8246,7 @@ html[data-theme="dark"] .app-logo {
             theme={theme}
             onToggleTheme={toggleTheme}
             onProfile={openProfile}
+            onWalkthrough={startWalkthrough}
             profileOpen={
               profileOpen
             }
@@ -7498,6 +8276,17 @@ html[data-theme="dark"] .app-logo {
 
           {page === "Analytics" && (
             <Analytics />
+          )}
+
+          {walkthroughOpen && (
+            <Walkthrough
+              page={page}
+              stepIndex={walkthroughStep}
+              onStepChange={
+                setWalkthroughStep
+              }
+              onClose={closeWalkthrough}
+            />
           )}
 
           {searchOpen && (
