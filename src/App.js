@@ -2606,19 +2606,12 @@ function Maps({
           }
         />
 
-        <div className="map-coordinates">
-          <span>
-            INDIA FIRMS SNAPSHOT
-          </span>
-
-          <span>
-            {FIRMS_METADATA.windowStart} → {FIRMS_METADATA.windowEnd}
-          </span>
-
-          <span>
-            PRE-CLASSIFIED DEMO
-          </span>
-        </div>
+        {/*
+          Removed: this strip repeated the snapshot name, the date range and
+          the pre-classified caveat, all of which the map title card already
+          shows at the top left. The .map-status chip below now carries the
+          honesty message on its own.
+        */}
       </section>
     </main>
   );
@@ -5359,16 +5352,16 @@ select:focus-visible {
 .map-status {
   position: absolute;
   z-index: 10;
-  bottom: 28px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 9px 12px;
-  background: rgba(5,7,10,.72);
+  bottom: 24px;
+  right: 16px;
+  padding: 5px 8px;
+  background: rgba(5,7,10,.66);
   border: 1px solid rgba(255,255,255,.08);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(10px);
   color: #75818C;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 9px;
+  letter-spacing: .04em;
   white-space: nowrap;
 }
 
@@ -6271,11 +6264,11 @@ html[data-theme="light"] .leaflet-control-attribution a {
 ========================================================= */
 
 .analytics-page {
-  padding-bottom: 120px;
+  padding-bottom: 64px;
 }
 
 .analytics-hero {
-  padding: 125px max(7vw,50px) 80px;
+  padding: 84px max(7vw,50px) 52px;
   border-bottom: 1px solid var(--line);
   text-align: left;
 }
@@ -6385,8 +6378,20 @@ html[data-theme="light"] .leaflet-control-attribution a {
   display: grid;
   grid-template-columns: 2.1fr .9fr;
   gap: 50px;
-  margin: 100px max(5vw,30px) 0;
+  margin: 64px max(5vw,30px) 0;
   align-items: start;
+}
+
+/*
+ * The analytics sub-sections are secondary to the page headline, so they run
+ * smaller than the shared 62px display size used on the dashboard.
+ */
+.analytics-page .section-heading h2 {
+  font-size: clamp(30px, 3.2vw, 44px);
+}
+
+.analytics-page .section-heading {
+  margin-bottom: 30px;
 }
 
 .trend-chart {
@@ -6509,7 +6514,7 @@ html[data-theme="light"] .leaflet-control-attribution a {
 }
 
 .classification-row {
-  margin-bottom: 29px;
+  margin-bottom: 18px;
 }
 
 .classification-top {
@@ -6554,8 +6559,8 @@ html[data-theme="light"] .leaflet-control-attribution a {
 ========================================================= */
 
 .locations-section {
-  margin: 120px max(5vw,30px) 0;
-  padding: 56px 0 0;
+  margin: 80px max(5vw,30px) 0;
+  padding: 40px 0 0;
   border-top: 1px solid var(--line);
 }
 
@@ -6564,7 +6569,7 @@ html[data-theme="light"] .leaflet-control-attribution a {
 }
 
 .ranking-row {
-  min-height: 90px;
+  min-height: 54px;
   display: grid;
   grid-template-columns: 70px 1fr 180px 100px;
   align-items: center;
@@ -6603,8 +6608,8 @@ html[data-theme="light"] .leaflet-control-attribution a {
 ========================================================= */
 
 .risk-distribution {
-  margin: 120px max(5vw,30px);
-  padding: 56px 0;
+  margin: 80px max(5vw,30px);
+  padding: 40px 0;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   text-align: left;
@@ -6660,8 +6665,8 @@ html[data-theme="light"] .leaflet-control-attribution a {
 ========================================================= */
 
 .critical-infrastructure {
-  margin: 120px max(5vw,30px) 0;
-  padding: 56px 0 0;
+  margin: 80px max(5vw,30px) 0;
+  padding: 40px 0 0;
   border-top: 1px solid rgba(255,48,64,.35);
   text-align: left;
 }
@@ -8154,16 +8159,17 @@ html[data-theme="light"] .loading-status {
 
 .walkthrough-spotlight {
   position: absolute;
-  border-radius: 10px;
+  border-radius: 6px;
   box-shadow:
     0 0 0 2px var(--orange),
     0 0 0 9999px rgba(3, 5, 8, .72);
   pointer-events: none;
-  transition:
-    top .26s cubic-bezier(.22, 1, .36, 1),
-    left .26s cubic-bezier(.22, 1, .36, 1),
-    width .26s cubic-bezier(.22, 1, .36, 1),
-    height .26s cubic-bezier(.22, 1, .36, 1);
+  /*
+   * No positional transition. The card snaps to the new position immediately,
+   * so an animating ring visibly trailed the control it was framing and read
+   * as a misaligned border. Opacity still fades in.
+   */
+  animation: walkthroughFade .18s ease both;
 }
 
 .walkthrough-card {
