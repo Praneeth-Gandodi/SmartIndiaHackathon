@@ -50,6 +50,40 @@ http://localhost:3000
 
 The development server watches source files and reloads the browser when changes are made. Press `Ctrl+C` in the terminal to stop it.
 
+## Run with Docker
+
+The image builds the Create React App bundle with Node, then serves only the
+static output with nginx. The final image carries no Node, npm or source.
+
+```bash
+docker build -t agni-drishti .
+docker run --rm -p 3000:80 agni-drishti
+```
+
+Then open:
+
+```text
+http://localhost:3000
+```
+
+Notes:
+
+- Port `80` inside the container is mapped to `3000` on the host so the URL
+  matches the development server.
+- `FIRMS_MAP_KEY` is not needed to build or run. The snapshot is already
+  checked in, and `.dockerignore` keeps `.env` out of every image layer.
+- The build stage uses Node 24 (npm 11). The checked-in `package-lock.json`
+  is only in sync with npm 11; under npm 10 the same lockfile fails
+  `npm ci` with `Missing: yaml@2.9.1 from lock file`. Keep the base image on
+  npm 11, or regenerate the lockfile before changing it.
+- The satellite globe textures and the Leaflet basemap are fetched at
+  runtime, so the container needs outbound network access.
+- `public/ref_frame_*.jpg`, `public/satellite.jpg` and
+  `public/textures/earth_night.jpg` are gitignored leftovers and are
+  excluded from the build context to keep the image small. The loading
+  screen uses `public/satellite.png` and the globe uses the remaining
+  `public/textures/*`, which are kept.
+
 ## Environment variables
 
 The FIRMS snapshot is already checked in at:
