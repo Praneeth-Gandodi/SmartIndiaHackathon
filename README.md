@@ -220,6 +220,10 @@ narrating it.
 - Replay it any time from the question mark button in the navbar.
 - Steps are per page, so a judge can re-watch just the map.
 - `SKIP` and `Esc` both dismiss it; arrow keys move between steps.
+- The page scrolls itself to bring each control into view, because the
+  walkthrough is modal and you cannot scroll it by hand.
+- The card flips to the opposite side of a control rather than sitting on top
+  of it when the preferred side has no room.
 - Styled with the existing design tokens, so it matches the active theme.
 
 For a demo you can force it to play again regardless of the stored flag:

@@ -262,47 +262,52 @@ const WALKTHROUGH_SEEN_KEY =
 
 /*
  * Steps are grouped per page. `target` is a CSS selector for the element to
- * highlight and `placement` decides which side of it the card sits on.
+ * highlight and `placement` decides which side of it the card sits on. When
+ * the requested side has no room the card flips to the other side rather than
+ * clamping back over the target.
+ *
  * `minWidth` skips a step on narrow viewports, where the target is either
- * hidden or collapsed behind the mobile filter drawer.
+ * hidden or collapsed behind the mobile filter drawer. It defaults to 900.
+ *
+ * Copy is deliberately concrete about what the viewer can see on screen. A
+ * claim the highlighted element does not support is worse than no claim.
  */
 const WALKTHROUGH_STEPS = {
   Dashboard: [
     {
-      target: ".stat-strip",
-      title: "The snapshot at a glance",
+      target: ".navbar",
+      title: "Three pages, and how to get back",
       body:
-        "101 real NASA FIRMS thermal events observed over India in a seven-day window, split across the five PS 26162 classes. Every count here is computed from the observations, not typed in.",
-      placement: "bottom"
-    },
-    {
-      target: ".detections-section .detection-row-main",
-      title: "One row, one real observation",
-      body:
-        "Each row is a single FIRMS detection. Expand it to see brightness, fire radiative power, the sensor that saw it, and how many observations the cluster holds. Click the name to open it on the map.",
+        "The AGNI DRISHTI mark always brings you here. The links switch between the three pages, and this walkthrough explains whichever one you are on. On the right: search any detection by site, class, risk or coordinates; the sun or moon button flips between dark and light; the bell lists the three highest-priority events; the question mark replays this walkthrough.",
       placement: "bottom"
     },
     {
       target: ".hero-actions",
       title: "Two ways in",
       body:
-        "Jump straight to the map to explore the events geographically, or go to Analytics for the filtered breakdown and charts.",
-      placement: "bottom"
+        "EXPLORE FIRMS MAP opens the India map, where you can filter the events and inspect each one against satellite imagery. VIEW INTELLIGENCE goes to Analytics for the filtered breakdown and charts.",
+      placement: "left"
+    },
+    {
+      target: ".stat-strip",
+      title: "What these numbers are",
+      body:
+        "NASA FIRMS logged 2,813 detections over India this week. We quality-filtered those to 1,198, clustered repeat sightings of the same fire down to 101 events, and grouped them into the five categories PS 26162 asks for. Every figure here is counted from that snapshot, not typed in.",
+      placement: "top"
+    },
+    {
+      target: ".detections-section .detection-row-main",
+      title: "One row, one real observation",
+      body:
+        "This is one of the eight newest of those 101 events. Click anywhere on the row to expand it and read the authentic NASA values: brightness in kelvin, fire radiative power in megawatts, the FIRMS quality flag, and how many times this fire was seen. VIEW ON MAP then flies to that exact spot. The coloured badge is our own demo priority, not a NASA rating.",
+      placement: "left"
     },
     {
       target: ".category-section",
       title: "The same events, grouped by class",
       body:
-        "The detections grouped by industrial fires, gas flares, agricultural burning, mining activity and wildfires. Class labels come from OpenStreetMap land use, so a steel plant reads as industrial rather than forest.",
+        "This is the industrial block, showing its first four of 48. The four blocks below it are gas flares, agricultural burning, mining and wildfire. Class labels come from OpenStreetMap land use, so a steel plant reads as industrial rather than forest. They are pre-classified for this demo, not model output.",
       placement: "top"
-    },
-    {
-      target: ".nav-right",
-      title: "Search, theme and walkthrough",
-      body:
-        "Search any detection by site name, class or coordinates. The moon button switches theme. The bell lists recent snapshot activity. The question mark replays this walkthrough whenever you need it.",
-      placement: "bottom",
-      minWidth: 900
     }
   ],
   Maps: [
@@ -310,7 +315,7 @@ const WALKTHROUGH_STEPS = {
       target: ".filter-rail .filter-group",
       title: "Filter by fire type",
       body:
-        "Each checkbox toggles one of the five PS 26162 classes. Untick a class to hide those events from the map. The counters and the map update as you go.",
+        "Each checkbox toggles one of the five problem-statement classes: industrial, gas flare, agricultural, mining and wildfire. Untick a class and its events leave the map. Untick all five and the map goes empty — the counter at the bottom of this rail drops to 0.",
       placement: "right",
       minWidth: 1024
     },
@@ -318,29 +323,38 @@ const WALKTHROUGH_STEPS = {
       target: ".filter-rail .filter-group + .filter-group",
       title: "Filter by risk level",
       body:
-        "Risk is a demo priority heuristic derived from real FIRMS brightness, fire radiative power and how many times the cluster was observed. It is not a NASA product.",
+        "Risk is our own demo priority, not a NASA product. It is built from real FIRMS brightness, fire radiative power (how much heat the sensor measured) and how many times a cluster of nearby sightings was observed.",
+      placement: "right",
+      minWidth: 1024
+    },
+    {
+      target: ".filter-rail .rail-bottom",
+      title: "How many you are looking at",
+      body:
+        "This counts the events currently passing your filters out of the 101 in the snapshot. RESET FILTERS puts every checkbox back.",
       placement: "right",
       minWidth: 1024
     },
     {
       target: ".map-legend",
-      title: "Read the colour legend",
+      title: "Colour and letter key",
       body:
-        "Markers are coloured by risk, and the letter inside each one is the class: I industrial, G gas flare, A agricultural, M mining, W wildfire.",
+        "These four swatches are the risk levels, and each marker is drawn in the colour of its risk. The letter inside a marker is the class instead: I industrial, G gas flare, A agricultural, M mining, W wildfire. That letter key sits in the FIRE TYPE filter on the left, not in this legend. Zoom in to read the letters.",
+      placement: "top",
+      minWidth: 520
+    },
+    {
+      target: ".map-stage",
+      title: "Click any marker",
+      body:
+        "All 101 events are on this map. Hover one to read its FIRMS values without opening it, or click to open the full panel: the PS 26162 class, the raw NASA numbers, a ten-day trend, and a zoomed satellite view of that exact spot so you can check the label against the ground.",
       placement: "top"
     },
     {
-      target: ".leaflet-marker-icon.fire-marker-wrapper",
-      title: "Click any marker",
-      body:
-        "The popup shows the classified category, the authentic FIRMS values, and a satellite view of that exact spot, so you can check the label against what is actually on the ground.",
-      placement: "left"
-    },
-    {
       target: ".map-overlay-controls",
-      title: "Basemap and zoom",
+      title: "Zoom and fullscreen",
       body:
-        "Switch between satellite imagery and the vector basemap, and use the zoom controls. The strip in the corner gives the snapshot date range and the live event count.",
+        "Zoom in, zoom out, and expand the map to fill the screen. The basemap toggle — SATELLITE or VECTOR — is the button at the bottom of the filter rail on the left. This is a static seven-day snapshot, 21 to 27 September 2026, not a live stream.",
       placement: "left"
     }
   ],
@@ -349,21 +363,56 @@ const WALKTHROUGH_STEPS = {
       target: ".analytics-filters",
       title: "Four ways to filter",
       body:
-        "Narrow the data by region, fire type, risk level and sensor. Everything below recalculates from whatever you select.",
+        "Narrow the data by region, fire type, risk level and source. Source is the satellite instrument, VIIRS or MODIS. Fire type is the five problem-statement classes. Everything below recalculates from whatever you select.",
       placement: "bottom"
     },
     {
       target: ".analytics-result-bar",
-      title: "How much is on screen",
+      title: "The running tally",
       body:
-        "The bar shows how many filters are active and how many of the 101 events match. Clear filters returns everything.",
+        "This reads the live count out of 101 and names the filters you have active. Pick one and watch the number move. Once a filter is set, CLEAR FILTERS appears here and puts all 101 back.",
       placement: "bottom"
     },
     {
-      target: ".analytics-main",
-      title: "The charts",
+      target: ".analytics-page .stat-strip",
+      title: "The numbers at a glance",
       body:
-        "Daily FIRMS counts, the class split, the risk mix, and the highest-priority detection with its supporting numbers. All of it responds to the filters above.",
+        "Six figures, all recomputed from your filters: how many events are in view, then the split across industrial, gas flares, agricultural, mining and wildfire.",
+      placement: "top"
+    },
+    {
+      target: ".trend-chart",
+      title: "Detections per day",
+      body:
+        "Daily FIRMS counts across the seven-day window, taken from each detection's acquisition date. The filled area is the count, the gridlines are the scale. Change a filter and the shape redraws from the matching events only.",
+      placement: "bottom"
+    },
+    {
+      target: ".classification",
+      title: "The class split",
+      body:
+        "The same filtered events broken down by problem-statement class, with a count and the share of the current view. Industrial dominates this snapshot at 48 of 101 because the demo deliberately weighted toward industrial sites, not because India fires that much more.",
+      placement: "left"
+    },
+    {
+      target: ".risk-distribution",
+      title: "The risk mix",
+      body:
+        "The same events grouped by risk level. This is our demo priority heuristic, not a NASA product. Critical plus High is the set worth acting on first.",
+      placement: "left"
+    },
+    {
+      target: ".critical-infrastructure",
+      title: "The priority detection",
+      body:
+        "The single highest-risk event in your current result set, with the numbers behind it: how many times the cluster was seen, how many events are in view, and the NASA pixel-quality score. This is the card to show a judge.",
+      placement: "top"
+    },
+    {
+      target: ".locations-section",
+      title: "Where they cluster",
+      body:
+        "The filtered events grouped by context, largest first. These are the named industrial sites, power stations and mining areas the OSM land-use step matched, so the list is effectively a map of the country's thermal hotspots.",
       placement: "top"
     }
   ]
@@ -408,7 +457,44 @@ function Walkthrough({
 
   const isNarrow =
     typeof window !== "undefined" &&
-    window.innerWidth < (step?.minWidth || 0);
+    window.innerWidth < (step?.minWidth || 900);
+
+  /*
+   * Bring the target into view before measuring it.
+   *
+   * The walkthrough is modal, so the viewer cannot scroll the page themselves.
+   * Without this, any step whose target sits below the fold highlights
+   * nothing: the cut-out is off screen and the oversized dim shadow covers
+   * the whole viewport, so the step reads as a black screen.
+   *
+   * Deliberately runs only when the step changes. The measure effect below
+   * already re-measures on every scroll frame, and scrolling from in there
+   * would fight the user's own scrolling.
+   */
+  useEffect(() => {
+    if (!step) return;
+
+    const element =
+      document.querySelector(step.target);
+    if (!element) return;
+
+    const box = element.getBoundingClientRect();
+    const stickyOffset = 84;
+    const aboveFold =
+      box.top >= stickyOffset &&
+      box.bottom <= window.innerHeight;
+    if (aboveFold) return;
+
+    // Not every environment implements scrollIntoView, e.g. jsdom.
+    if (typeof element.scrollIntoView !== "function") {
+      return;
+    }
+
+    element.scrollIntoView({
+      block: "center",
+      inline: "nearest"
+    });
+  }, [step, page]);
 
   /*
    * Measure the highlighted element and keep the cut-out tracking it.
@@ -454,7 +540,16 @@ function Walkthrough({
       true
     );
 
-    const settle = setTimeout(measure, 140);
+    /*
+     * The page scrolls smoothly, and `.reveal` blocks animate in over
+     * ~0.8s, so re-measure a few times to settle on the final position
+     * rather than catching the target mid-animation.
+     */
+    const settle = [
+      120, 400, 800, 1200
+    ].map((delay) =>
+      setTimeout(measure, delay)
+    );
     return () => {
       window.removeEventListener(
         "resize",
@@ -465,7 +560,7 @@ function Walkthrough({
         measure,
         true
       );
-      clearTimeout(settle);
+      settle.forEach(clearTimeout);
     };
   }, [step, page]);
 
@@ -525,25 +620,50 @@ function Walkthrough({
         step.placement || "bottom";
       let top;
       let left;
+      let side = placement;
 
-      if (placement === "top") {
-        top = rect.top - cardHeight - gap;
-      } else if (
-        placement === "left" ||
-        placement === "right"
-      ) {
+      if (placement === "top" || placement === "bottom") {
+        top =
+          placement === "top"
+            ? rect.top - cardHeight - gap
+            : rect.bottom + gap;
+        left = rect.left;
+      } else {
         top =
           rect.top + rect.height / 2 - cardHeight / 2;
-      } else {
-        top = rect.bottom + gap;
-      }
+        /*
+         * `left` puts the card on the right-hand side of the target and
+         * `right` puts it on the left-hand side. Flip to the other side
+         * when the requested side has no room, so the card can never end up
+         * clamped back on top of the thing it is describing.
+         */
+        const preferred =
+          placement === "left"
+            ? rect.left + rect.width + gap
+            : rect.left - cardWidth - gap;
+        const flipped =
+          placement === "left"
+            ? rect.left - cardWidth - gap
+            : rect.left + rect.width + gap;
 
-      if (placement === "left") {
-        left = rect.left + rect.width + gap;
-      } else if (placement === "right") {
-        left = rect.left - cardWidth - gap;
-      } else {
-        left = rect.left;
+        const fits =
+          preferred >= margin &&
+          preferred + cardWidth <=
+            viewportWidth - margin;
+        const flippedFits =
+          flipped >= margin &&
+          flipped + cardWidth <=
+            viewportWidth - margin;
+
+        if (fits || !flippedFits) {
+          left = preferred;
+        } else {
+          left = flipped;
+          side =
+            placement === "left"
+              ? "right"
+              : "left";
+        }
       }
 
       top = Math.min(
@@ -567,7 +687,7 @@ function Walkthrough({
         return;
       }
 
-      setPos({ top, left });
+      setPos({ top, left, side });
     };
 
     place();
@@ -2921,13 +3041,46 @@ function RiskDistribution({ detections = [] }) {
 ========================================================= */
 
 function CriticalInfrastructure({ detections = [] }) {
-  const { DETECTIONS } = useLiveData();
-  const source = detections.length ? detections : DETECTIONS;
+  /*
+   * Strictly the filtered set. Falling back to the unfiltered detections
+   * when a filter matches nothing made this card show the whole snapshot
+   * under a label reading "FILTERED THERMAL EVENTS", which is simply wrong,
+   * and it contradicted the rest of the page showing 0.
+   */
+  const source = detections;
   const top = [...source].sort((a, b) => {
     const riskDifference = (RISK_ORDER[b.risk] || 0) - (RISK_ORDER[a.risk] || 0);
     return riskDifference || (b.frp || 0) - (a.frp || 0);
   })[0];
-  if (!top) return null;
+
+  if (!top) {
+    return (
+      <section className="critical-infrastructure critical-infrastructure-empty">
+        <div className="critical-header">
+          <div>
+            <div className="eyebrow critical-eyebrow">
+              FIRMS PRIORITY EVENT
+            </div>
+
+            <h2>
+              NO MATCHING
+              <br />
+              <span>
+                PRIORITY EVENT
+              </span>
+            </h2>
+
+            <p>
+              No detection in the current
+              result set matches these
+              filters. Clear or widen a
+              filter to bring events back.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const totalCount = source.length;
 

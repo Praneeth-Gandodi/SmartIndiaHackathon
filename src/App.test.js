@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import App from "./App";
 
 /*
@@ -81,7 +81,7 @@ test("opens the walkthrough on a first visit and marks it seen on skip", () => {
 
   expect(screen.getByRole("dialog")).toBeInTheDocument();
   expect(
-    screen.getByText("The snapshot at a glance")
+    screen.getByText("Three pages, and how to get back")
   ).toBeInTheDocument();
 
   act(() => {
@@ -119,8 +119,30 @@ test("replays the walkthrough from the navbar", () => {
 
   expect(screen.getByRole("dialog")).toBeInTheDocument();
   expect(
-    screen.getByText("The snapshot at a glance")
+    screen.getByText("Three pages, and how to get back")
   ).toBeInTheDocument();
+});
+
+test("shows an empty state instead of unfiltered data when a filter matches nothing", () => {
+  jest.useFakeTimers();
+  render(<App />);
+  advancePastLoading();
+
+  act(() => {
+    screen.getByText("Analytics").click();
+  });
+
+  // EAST INDIA has zero detections in the snapshot. The priority card used to
+  // fall back to the unfiltered set and display 101 under a label reading
+  // "FILTERED THERMAL EVENTS", which contradicted the rest of the page.
+  const region = screen.getByDisplayValue("ALL REGIONS");
+  fireEvent.change(region, { target: { value: "EAST INDIA" } });
+
+  expect(screen.getByText("SHOWING 0 OF 101 EVENTS")).toBeInTheDocument();
+  expect(screen.getByText(/NO MATCHING/)).toBeInTheDocument();
+  expect(
+    screen.queryByText("FILTERED THERMAL EVENTS")
+  ).not.toBeInTheDocument();
 });
 
 test("moves forward and back through the walkthrough steps", () => {
@@ -137,14 +159,12 @@ test("moves forward and back through the walkthrough steps", () => {
   act(() => {
     screen.getByText("NEXT").click();
   });
-  expect(
-    screen.getByText("One row, one real observation")
-  ).toBeInTheDocument();
+  expect(screen.getByText("Two ways in")).toBeInTheDocument();
 
   act(() => {
     screen.getByText("BACK").click();
   });
   expect(
-    screen.getByText("The snapshot at a glance")
+    screen.getByText("Three pages, and how to get back")
   ).toBeInTheDocument();
 });
